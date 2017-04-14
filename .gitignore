@@ -1,0 +1,6 @@
+*.bam
+*.bai
+
+logs/
+.ipynb_checkpoints/
+.nfs*
