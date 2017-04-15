@@ -4,3 +4,5 @@
 logs/
 .ipynb_checkpoints/
 .nfs*
+.idea/
+venv/
