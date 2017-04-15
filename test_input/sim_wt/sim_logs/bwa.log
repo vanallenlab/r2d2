@@ -1,7 +1,0 @@
-[M::bwa_idx_load_from_disk] read 0 ALT contigs
-[M::process] read 1000 sequences (70000 bp)...
-[M::process] 1000 single-end sequences; 0 paired-end sequences
-[M::mem_process_seqs] Processed 1000 reads in 0.032 CPU sec, 0.006 real sec
-[main] Version: 0.7.12-r1039
-[main] CMD: bwa mem -M -t 8 -p test_input/e_coli/NC_008253_1K.fna /tmp/tmp.Vp2SDxNEMq
-[main] Real time: 0.023 sec; CPU: 0.037 sec
