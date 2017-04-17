@@ -16,42 +16,29 @@ if __name__ == "__main__":
 
     # Load all input files into pandas DFs.
     read_csv_args = {'sep': '\t', 'comment': '#', 'skip_blank_lines': True, 'header': 0}
-    input_mafs = {
-        'dna_normal': pd.read_csv(args.dna_normal, **read_csv_args),
-        'dna_tumor': pd.read_csv(args.dna_tumor, **read_csv_args),
-        'rna_normal': pd.read_csv(args.rna_normal, **read_csv_args),
-        'rna_tumor': pd.read_csv(args.rna_tumor, **read_csv_args)
-    }
+    input_mafs = {}
+    for maf_type in ['dna_normal', 'dna_tumor', 'rna_normal', 'rna_tumor']:
+        maf_arg = getattr(args, maf_type)
+        if maf_arg:
+            input_mafs[maf_type] = pd.read_csv(maf_arg, **read_csv_args)
 
-    for input_type in input_mafs.keys():
-        new_columns = []
-        for column in input_mafs[input_type].columns:
-            new_column = column
-            if column not in ['Start_position', 'End_position']:
-                new_column += '_' + input_type
+            # Correct column names (add maf_type suffix)
+            new_columns = []
+            for column in input_mafs[maf_type].columns:
+                new_column = column
+                # Don't change start/end position column names (we will merge on these columns)
+                if column not in ['Start_position', 'End_position']:
+                    new_column += '_' + maf_type
 
-            new_columns.append(new_column)
+                new_columns.append(new_column)
 
-        input_mafs[input_type].columns = new_columns
+            input_mafs[maf_type].columns = new_columns
 
     # Merge DFs on position into one agg DF.
-    inputs_merge = input_mafs['dna_normal'].merge(
-        input_mafs['dna_tumor'],
-        how='outer',
-        on=['Start_position', 'End_position'],
-    )
-
-    inputs_merge = inputs_merge.merge(
-        input_mafs['rna_normal'],
-        how='outer',
-        on=['Start_position', 'End_position'],
-    )
-
-    inputs_merge = inputs_merge.merge(
-        input_mafs['rna_tumor'],
-        how='outer',
-        on=['Start_position', 'End_position'],
-    )
+    merge_columns = ['Start_position', 'End_position']
+    inputs_merge = input_mafs['dna_normal'].merge(input_mafs['dna_tumor'], how='outer', on=merge_columns)
+    inputs_merge = inputs_merge.merge(input_mafs['rna_normal'], how='outer', on=merge_columns)
+    inputs_merge = inputs_merge.merge(input_mafs['rna_tumor'], how='outer', on=merge_columns)
 
     # Extract dna_normal/dna_tumor/rna_normal/rna_tumor values from DF.
     output_maf_map = OrderedDict([

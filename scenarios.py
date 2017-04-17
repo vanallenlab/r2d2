@@ -78,6 +78,9 @@ class Scenario(object):
                 if quad_type in remaining_types and subclass.conditions[quad_type].test(quad_vaf):
                     remaining_types.remove(quad_type)
                 else:
+                    # Debug output:
+                    #if quad_type in remaining_types:
+                    #    print subclass.name, ':', quad_type, quad_vaf, 'failed', subclass.conditions[quad_type]._clauses
                     break
 
                 if not remaining_types:
@@ -116,6 +119,14 @@ class TVSEAllInputs(Scenario):
 
 class TVSENoDNANormal(Scenario):
     name = 't_vse_no_dna_normal'
+
+
+class VSLAllInputs(Scenario):
+    name = 'vsl_all_inputs'
+
+
+class VSLNormalOnly(Scenario):
+    name = 'vsl_normal_only'
 
 
 class TVSLAllInputs(Scenario):
