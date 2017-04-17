@@ -64,10 +64,10 @@ class Scenario(object):
 
     _subclass_conditions_set = False
 
-    def __new__(cls, quad):
+    def __new__(cls, quad, scenarios_config_filename):
         if not Scenario._subclass_conditions_set:
             config = ConfigParser.ConfigParser()
-            config.read(SCENARIOS_CONFIG)
+            config.read(scenarios_config_filename)
             Scenario._set_subclass_conditions(config)
 
             Scenario._subclass_conditions_set = True

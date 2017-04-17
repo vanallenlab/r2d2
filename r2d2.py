@@ -1,18 +1,34 @@
 import argparse
 import pandas as pd
+import ConfigParser
+import sys
 from scenarios import Scenario
 from collections import OrderedDict
 
-AF_COLUMN = 'AF1'
+CONFIG_FILENAME='r2d2.ini'
 
 if __name__ == "__main__":
+    # Arguments may override config settings
+    config = ConfigParser.ConfigParser()
+    config.read(CONFIG_FILENAME)
+    vaf_column_name = config.get('Settings', 'vaf_column_name')
+    scenarios_config_filename = config.get('Settings', 'scenarios_config_file')
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-dn', '--dna_normal', type=argparse.FileType('r'), help='Path to DNA normal MAF.')
     parser.add_argument('-dt', '--dna_tumor', type=argparse.FileType('r'), help='Path to DNA tumor MAF.')
     parser.add_argument('-rn', '--rna_normal', type=argparse.FileType('r'), help='Path to RNA normal MAF.')
     parser.add_argument('-rt', '--rna_tumor', type=argparse.FileType('r'), help='Path to RNA tumor MAF.')
     parser.add_argument('-o', '--output', type=argparse.FileType('w'), help='Path to output file.')
+    parser.add_argument('--scenarios_config', type=argparse.FileType('w'),
+                        help='Path to scenario configuration file (default=%s).' % scenarios_config_filename)
+    parser.add_argument('--vaf_column_name', type=argparse.FileType('w'),
+                        help='Column name to read (default=%s).' % vaf_column_name)
     args = parser.parse_args()
+
+    if not args.dna_normal and not args.dna_tumor and not args.rna_normal and not args.rna_tumor:
+        print 'Error: No input files provided.'
+        sys.exit(2)
 
     # Load all input files into pandas DFs.
     read_csv_args = {'sep': '\t', 'comment': '#', 'skip_blank_lines': True, 'header': 0}
@@ -71,7 +87,7 @@ if __name__ == "__main__":
             quad[input_type] = row[vaf_column] if vaf_column in row.keys() else 0
 
         try:
-            scenario = Scenario(quad)
+            scenario = Scenario(quad, scenarios_config_filename)
         except Scenario.NoScenarioException as e:
             continue
 
