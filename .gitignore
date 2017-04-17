@@ -1,8 +1,10 @@
 *.bam
 *.bai
+output.tsv
 
 logs/
 .ipynb_checkpoints/
 .nfs*
 .idea/
 venv/
+scenarios.pyc
