@@ -75,11 +75,10 @@ class Scenario(object):
         for subclass in Scenario._get_all_subclasses():
             remaining_types = subclass.conditions.keys()
             for quad_type, quad_vaf in quad.iteritems():
-                if quad_type in remaining_types:
-                    if not subclass.conditions[quad_type].test(quad_vaf):
-                        break
-
+                if quad_type in remaining_types and subclass.conditions[quad_type].test(quad_vaf):
                     remaining_types.remove(quad_type)
+                else:
+                    break
 
                 if not remaining_types:
                     return object.__new__(subclass)
