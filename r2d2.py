@@ -41,16 +41,17 @@ if __name__ == "__main__":
                              'Overrides --vaf-column-name')
     args = parser.parse_args()
 
-    # Check that at least one input file was provided.
-    if not args.dna_normal and not args.dna_tumor and not args.rna_normal and not args.rna_tumor:
-        print 'Error: No input files provided.'
-        sys.exit(2)
 
+    # Get input file set and set MAF VAF column names
     maf_types = ['dna_normal', 'dna_tumor', 'rna_normal', 'rna_tumor']
     vaf_columns = {}
 
-    # Set MAF VAF column names
-    for maf_type in maf_types:
+    # We cannot modify a list while looping over it, so we use a list comprehension to make a copy
+    for maf_type in [maf_type for maf_type in maf_types]:
+        if not getattr(args, maf_type):
+            maf_types.remove(maf_type)
+            continue
+
         vaf_column = getattr(args, '%s_column' % maf_type)
         if vaf_column:
             vaf_columns[maf_type] = vaf_column
@@ -58,6 +59,11 @@ if __name__ == "__main__":
             vaf_columns[maf_type] = args.vaf_column_name
         else:
             vaf_columns[maf_type] = vaf_column_name
+
+    # Check that at least one input file was provided.
+    if not maf_types:
+        print 'Error: No input files provided.'
+        sys.exit(2)
 
     # Load all input files into pandas DFs.
     read_csv_args = {'sep': '\t', 'comment': '#', 'skip_blank_lines': True, 'header': 0}
@@ -82,9 +88,12 @@ if __name__ == "__main__":
             input_mafs[maf_type].columns = new_columns
 
     # Merge DFs on position into one agg DF.
-    inputs_merge = input_mafs['dna_normal'].merge(input_mafs['dna_tumor'], how='outer', on=merge_columns)
-    inputs_merge = inputs_merge.merge(input_mafs['rna_normal'], how='outer', on=merge_columns)
-    inputs_merge = inputs_merge.merge(input_mafs['rna_tumor'], how='outer', on=merge_columns)
+    input_merge = None
+    for maf_type in maf_types:
+        if input_merge is None:
+            input_merge = input_mafs[maf_type]
+        else:
+            input_merge = input_merge.merge(input_mafs[maf_type], how='outer', on=merge_columns)
 
     # Extract dna_normal/dna_tumor/rna_normal/rna_tumor values from DF.
     output_maf_map = OrderedDict([
@@ -110,7 +119,7 @@ if __name__ == "__main__":
     for output_column in ['scenario'] + output_maf_map.keys():
         output_rows[output_column] = []
 
-    for i, row in inputs_merge.iterrows():
+    for i, row in input_merge.iterrows():
         quad = {}
         for input_type in input_mafs.keys():
             vaf_column = '%s_%s' % (vaf_columns[input_type], input_type)
