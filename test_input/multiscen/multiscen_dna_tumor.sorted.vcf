@@ -1,0 +1,38 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##samtoolsVersion=1.4+htslib-1.4
+##samtoolsCommand=samtools mpileup -g -f test_input/e_coli/NC_008253_1K.fna test_input/multiscen/multiscen_dna_tumor.sorted.bam
+##reference=file://test_input/e_coli/NC_008253_1K.fna
+##contig=<ID=gi|110640213|ref|NC_008253.1|,length=1000>
+##ALT=<ID=*,Description="Represents allele(s) other than observed.">
+##INFO=<ID=INDEL,Number=0,Type=Flag,Description="Indicates that the variant is an INDEL.">
+##INFO=<ID=IDV,Number=1,Type=Integer,Description="Maximum number of reads supporting an indel">
+##INFO=<ID=IMF,Number=1,Type=Float,Description="Maximum fraction of reads supporting an indel">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Raw read depth">
+##INFO=<ID=VDB,Number=1,Type=Float,Description="Variant Distance Bias for filtering splice-site artefacts in RNA-seq data (bigger is better)",Version="3">
+##INFO=<ID=RPB,Number=1,Type=Float,Description="Mann-Whitney U test of Read Position Bias (bigger is better)">
+##INFO=<ID=MQB,Number=1,Type=Float,Description="Mann-Whitney U test of Mapping Quality Bias (bigger is better)">
+##INFO=<ID=BQB,Number=1,Type=Float,Description="Mann-Whitney U test of Base Quality Bias (bigger is better)">
+##INFO=<ID=MQSB,Number=1,Type=Float,Description="Mann-Whitney U test of Mapping Quality vs Strand Bias (bigger is better)">
+##INFO=<ID=SGB,Number=1,Type=Float,Description="Segregation based metric.">
+##INFO=<ID=MQ0F,Number=1,Type=Float,Description="Fraction of MQ0 reads (smaller is better)">
+##FORMAT=<ID=PL,Number=G,Type=Integer,Description="List of Phred-scaled genotype likelihoods">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##INFO=<ID=AF1,Number=1,Type=Float,Description="Max-likelihood estimate of the first ALT allele frequency (assuming HWE)">
+##INFO=<ID=AF2,Number=1,Type=Float,Description="Max-likelihood estimate of the first and second group ALT allele frequency (assuming HWE)">
+##INFO=<ID=AC1,Number=1,Type=Float,Description="Max-likelihood estimate of the first ALT allele count (no HWE assumption)">
+##INFO=<ID=MQ,Number=1,Type=Integer,Description="Root-mean-square mapping quality of covering reads">
+##INFO=<ID=FQ,Number=1,Type=Float,Description="Phred probability of all samples being the same">
+##INFO=<ID=PV4,Number=4,Type=Float,Description="P-values for strand bias, baseQ bias, mapQ bias and tail distance bias">
+##INFO=<ID=G3,Number=3,Type=Float,Description="ML estimate of genotype frequencies">
+##INFO=<ID=HWE,Number=1,Type=Float,Description="Chi^2 based HWE test P-value based on G3">
+##INFO=<ID=DP4,Number=4,Type=Integer,Description="Number of high-quality ref-forward , ref-reverse, alt-forward and alt-reverse bases">
+##bcftools_callVersion=1.4+htslib-1.4
+##bcftools_callCommand=call -c -v -; Date=Wed Apr 19 00:30:31 2017
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	test_input/multiscen/multiscen_dna_tumor.sorted.bam
+gi|110640213|ref|NC_008253.1|	300	.	G	C	147.008	.	DP=68;VDB=0.233128;SGB=-0.693079;RPB=0.69701;MQB=1;BQB=0.838562;MQ0F=0;AF1=0.5;AC1=1;DP4=35,0,29,0;MQ=60;FQ=149.502;PV4=1,0.0450295,1,1	GT:PL	0/1:177,0,186
+gi|110640213|ref|NC_008253.1|	400	.	A	C	225.009	.	DP=79;VDB=0.58375;SGB=-0.693139;RPB=0.875825;MQB=1;MQSB=1;BQB=0.904788;MQ0F=0;AF1=0.5;AC1=1;DP4=33,7,33,3;MQ=60;FQ=225.007;PV4=0.316759,0.158734,1,1	GT:PL	0/1:255,0,255
+gi|110640213|ref|NC_008253.1|	500	.	T	C	225.009	.	DP=90;VDB=0.55604;SGB=-0.693146;RPB=0.765696;MQB=1;MQSB=1;BQB=0.841724;MQ0F=0;AF1=0.5;AC1=1;DP4=24,22,22,21;MQ=60;FQ=225.007;PV4=1,0.0548106,1,1	GT:PL	0/1:255,0,255
+gi|110640213|ref|NC_008253.1|	600	.	C	G	187.009	.	DP=70;VDB=0.0835788;SGB=-0.69311;RPB=0.997709;MQB=1;MQSB=1;BQB=0.848806;MQ0F=0;AF1=0.5;AC1=1;DP4=1,36,1,30;MQ=60;FQ=189.502;PV4=1,1,1,1	GT:PL	0/1:217,0,226
+gi|110640213|ref|NC_008253.1|	700	.	T	G	183.999	.	DP=65;VDB=0.0322821;SGB=-0.693147;RPB=1;MQB=1;BQB=1;MQ0F=0;AF1=1;AC1=2;DP4=0,1,0,62;MQ=60;FQ=-180.988;PV4=1,1,1,1	GT:PL	1/1:217,154,0
+gi|110640213|ref|NC_008253.1|	800	.	G	C	150.008	.	DP=69;VDB=0.982;SGB=-0.69312;RPB=0.887074;MQB=1;BQB=0.535782;MQ0F=0;AF1=0.5;AC1=1;DP4=0,35,0,32;MQ=60;FQ=152.043;PV4=1,0.0521261,1,0.0479173	GT:PL	0/1:180,0,186

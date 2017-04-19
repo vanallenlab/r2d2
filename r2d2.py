@@ -85,6 +85,8 @@ if __name__ == "__main__":
         for input_type in input_mafs.keys():
             vaf_column = 'AF1_' + input_type
             quad[input_type] = row[vaf_column] if vaf_column in row.keys() else 0
+            if pd.isnull(quad[input_type]):
+                quad[input_type] = 0
 
         try:
             scenario = Scenario(quad, scenarios_config_filename)
