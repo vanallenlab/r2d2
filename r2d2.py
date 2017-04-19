@@ -14,28 +14,57 @@ if __name__ == "__main__":
     vaf_column_name = config.get('Settings', 'vaf_column_name')
     scenarios_config_filename = config.get('Settings', 'scenarios_config_file')
 
+    # Argument parsing
     parser = argparse.ArgumentParser()
     parser.add_argument('-dn', '--dna_normal', type=argparse.FileType('r'), help='Path to DNA normal MAF.')
     parser.add_argument('-dt', '--dna_tumor', type=argparse.FileType('r'), help='Path to DNA tumor MAF.')
     parser.add_argument('-rn', '--rna_normal', type=argparse.FileType('r'), help='Path to RNA normal MAF.')
     parser.add_argument('-rt', '--rna_tumor', type=argparse.FileType('r'), help='Path to RNA tumor MAF.')
     parser.add_argument('-o', '--output', type=argparse.FileType('w'), help='Path to output file.')
+
+    parser.add_argument('--vaf_column_name', type=argparse.FileType('w'),
+                        help='Name of column containing variant allele frequency (default=%s).' % vaf_column_name)
     parser.add_argument('--scenarios_config', type=argparse.FileType('w'),
                         help='Path to scenario configuration file (default=%s).' % scenarios_config_filename)
-    parser.add_argument('--vaf_column_name', type=argparse.FileType('w'),
-                        help='Column name to read (default=%s).' % vaf_column_name)
+
+    parser.add_argument('-dnc', '--dna_normal_column', type=str,
+                        help='Name of column in DNA normal MAF containing variant allele frequency.'
+                             'Overrides --vaf-column-name')
+    parser.add_argument('-dtc', '--dna_tumor_column', type=str,
+                        help='Name of column in DNA tumor MAF containing variant allele frequency.'
+                             'Overrides --vaf-column-name')
+    parser.add_argument('-rnc', '--rna_normal_column', type=str,
+                        help='Name of column in RNA normal MAF containing variant allele frequency.'
+                             'Overrides --vaf-column-name')
+    parser.add_argument('-rtc', '--rna_tumor_column', type=str,
+                        help='Name of column in RNA tumor MAF containing variant allele frequency.'
+                             'Overrides --vaf-column-name')
     args = parser.parse_args()
 
+    # Check that at least one input file was provided.
     if not args.dna_normal and not args.dna_tumor and not args.rna_normal and not args.rna_tumor:
         print 'Error: No input files provided.'
         sys.exit(2)
+
+    maf_types = ['dna_normal', 'dna_tumor', 'rna_normal', 'rna_tumor']
+    vaf_columns = {}
+
+    # Set MAF VAF column names
+    for maf_type in maf_types:
+        vaf_column = getattr(args, '%s_column' % maf_type)
+        if vaf_column:
+            vaf_columns[maf_type] = vaf_column
+        elif args.vaf_column_name:
+            vaf_columns[maf_type] = args.vaf_column_name
+        else:
+            vaf_columns[maf_type] = vaf_column_name
 
     # Load all input files into pandas DFs.
     read_csv_args = {'sep': '\t', 'comment': '#', 'skip_blank_lines': True, 'header': 0}
     input_mafs = {}
     merge_columns = ['Hugo_Symbol', 'Chromosome', 'Start_position', 'End_position',
                      'Strand', 'Variant_Classification', 'Variant_Type']
-    for maf_type in ['dna_normal', 'dna_tumor', 'rna_normal', 'rna_tumor']:
+    for maf_type in maf_types:
         maf_arg = getattr(args, maf_type)
         if maf_arg:
             input_mafs[maf_type] = pd.read_csv(maf_arg, **read_csv_args)
@@ -84,7 +113,11 @@ if __name__ == "__main__":
     for i, row in inputs_merge.iterrows():
         quad = {}
         for input_type in input_mafs.keys():
-            vaf_column = 'AF1_' + input_type
+            vaf_column = '%s_%s' % (vaf_columns[input_type], input_type)
+            if vaf_column not in row.index:
+                raise Exception('Error: VAF column %s not found in %s sample.' %
+                                (vaf_columns[input_type], input_type))
+
             quad[input_type] = row[vaf_column] if vaf_column in row.keys() else 0
             if pd.isnull(quad[input_type]):
                 quad[input_type] = 0
