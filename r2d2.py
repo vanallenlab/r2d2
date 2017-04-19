@@ -33,6 +33,8 @@ if __name__ == "__main__":
     # Load all input files into pandas DFs.
     read_csv_args = {'sep': '\t', 'comment': '#', 'skip_blank_lines': True, 'header': 0}
     input_mafs = {}
+    merge_columns = ['Hugo_Symbol', 'Chromosome', 'Start_position', 'End_position',
+                     'Strand', 'Variant_Classification', 'Variant_Type']
     for maf_type in ['dna_normal', 'dna_tumor', 'rna_normal', 'rna_tumor']:
         maf_arg = getattr(args, maf_type)
         if maf_arg:
@@ -42,8 +44,8 @@ if __name__ == "__main__":
             new_columns = []
             for column in input_mafs[maf_type].columns:
                 new_column = column
-                # Don't change start/end position column names (we will merge on these columns)
-                if column not in ['Start_position', 'End_position']:
+                # Don't change merge column names
+                if column not in merge_columns:
                     new_column += '_' + maf_type
 
                 new_columns.append(new_column)
@@ -51,20 +53,19 @@ if __name__ == "__main__":
             input_mafs[maf_type].columns = new_columns
 
     # Merge DFs on position into one agg DF.
-    merge_columns = ['Start_position', 'End_position']
     inputs_merge = input_mafs['dna_normal'].merge(input_mafs['dna_tumor'], how='outer', on=merge_columns)
     inputs_merge = inputs_merge.merge(input_mafs['rna_normal'], how='outer', on=merge_columns)
     inputs_merge = inputs_merge.merge(input_mafs['rna_tumor'], how='outer', on=merge_columns)
 
     # Extract dna_normal/dna_tumor/rna_normal/rna_tumor values from DF.
     output_maf_map = OrderedDict([
-        ('Hugo_Symbol', 'Hugo_Symbol_dna_normal'),
-        ('Chromosome', 'Chromosome_dna_normal'),
+        ('Hugo_Symbol', 'Hugo_Symbol'),
+        ('Chromosome', 'Chromosome'),
         ('Start_position', 'Start_position'),
         ('End_position', 'End_position'),
-        ('Strand', 'Strand_dna_normal'),
-        ('Variant_Classification', 'Variant_Classification_dna_normal'),
-        ('Variant_Type', 'Variant_Type_dna_normal'),
+        ('Strand', 'Strand'),
+        ('Variant_Classification', 'Variant_Classification'),
+        ('Variant_Type', 'Variant_Type'),
         ('Reference_Allele', 'Reference_Allele_dna_normal'),
         ('DNA_Normal_Allele1', 'Tumor_Seq_Allele1_dna_normal'),
         ('DNA_Normal_Allele2', 'Tumor_Seq_Allele2_dna_normal'),
