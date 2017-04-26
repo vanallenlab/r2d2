@@ -97,6 +97,8 @@ if __name__ == "__main__":
         else:
             input_merge = input_merge.merge(input_mafs[maf_type], how='outer', on=merge_columns)
 
+    logging.info('Analyzing %s total variants...' % len(input_merge.index))
+
     # Extract dna_normal/dna_tumor/rna_normal/rna_tumor values from DF.
     output_maf_map = OrderedDict([
         ('Hugo_Symbol', 'Hugo_Symbol'),
@@ -122,6 +124,10 @@ if __name__ == "__main__":
         output_rows[output_column] = []
 
     for i, row in input_merge.iterrows():
+        # We only consider single-nucleotide polymorphisms (exclude DNPs, TNPs, etc.)
+        if row['Variant_Type'] != 'SNP':
+            continue
+
         quad = {}
         for input_type in input_mafs.keys():
             vaf_column = '%s_%s' % (vaf_columns[input_type], input_type)
@@ -145,3 +151,5 @@ if __name__ == "__main__":
 
     # Write output.
     pd.DataFrame.from_dict(output_rows).to_csv(args.output, index=False, header=True, sep='\t')
+
+    logging.info('Wrote %s discovered scenarios to %s.' % (len(output_rows), args.output.name))
