@@ -2,6 +2,7 @@ import argparse
 import pandas as pd
 import ConfigParser
 import sys
+import logging
 from scenarios import Scenario
 from collections import OrderedDict
 
@@ -13,6 +14,7 @@ if __name__ == "__main__":
     config.read(CONFIG_FILENAME)
     vaf_column_name = config.get('Settings', 'vaf_column_name')
     scenarios_config_filename = config.get('Settings', 'scenarios_config_file')
+    logging.basicConfig(level=logging.INFO)
 
     # Argument parsing
     parser = argparse.ArgumentParser()
@@ -41,7 +43,6 @@ if __name__ == "__main__":
                              'Overrides --vaf-column-name')
     args = parser.parse_args()
 
-
     # Get input file set and set MAF VAF column names
     maf_types = ['dna_normal', 'dna_tumor', 'rna_normal', 'rna_tumor']
     vaf_columns = {}
@@ -62,7 +63,7 @@ if __name__ == "__main__":
 
     # Check that at least one input file was provided.
     if not maf_types:
-        print 'Error: No input files provided.'
+        logging.error('No input files provided.')
         sys.exit(2)
 
     # Load all input files into pandas DFs.
@@ -74,6 +75,7 @@ if __name__ == "__main__":
         maf_arg = getattr(args, maf_type)
         if maf_arg:
             input_mafs[maf_type] = pd.read_csv(maf_arg, **read_csv_args)
+            logging.info('Loaded %s data from %s.' % (maf_type, maf_arg.name))
 
             # Correct column names (add maf_type suffix)
             new_columns = []
