@@ -150,6 +150,6 @@ if __name__ == "__main__":
             output_rows[output_column].append(row[input_column])
 
     # Write output.
-    pd.DataFrame.from_dict(output_rows).to_csv(args.output, index=False, header=True, sep='\t')
-
-    logging.info('Wrote %s discovered scenarios to %s.' % (len(output_rows), args.output.name))
+    output_df = pd.DataFrame.from_dict(output_rows)
+    output_df.to_csv(args.output, index=False, header=True, sep='\t')
+    logging.info('Wrote %s discovered scenarios to %s.' % (len(output_df.index), args.output.name))
