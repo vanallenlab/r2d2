@@ -137,12 +137,20 @@ class TVSLNoDNANormal(Scenario):
     name = 't_vsl_no_dna_normal'
 
 
-class LOHAllInputs(Scenario):
-    name = 'loh_all_inputs'
+class LOHAltAllInputs(Scenario):
+    name = 'loh_alt_all_inputs'
 
 
-class LOHDNAOnly(Scenario):
-    name = 'loh_dna_only'
+class LOHAltDNAOnly(Scenario):
+    name = 'loh_alt_dna_only'
+
+
+class LOHCNAllInputs(Scenario):
+    name = 'loh_cn_all_inputs'
+
+
+class LOHCNDNAOnly(Scenario):
+    name = 'loh_cn_dna_only'
 
 
 class SomaticAllInputs(Scenario):
