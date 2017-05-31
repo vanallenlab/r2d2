@@ -77,10 +77,17 @@ if __name__ == "__main__":
     merge_columns = ['Hugo_Symbol', 'Chromosome', 'Start_position', 'End_position',
                      'Strand', 'Variant_Classification', 'Variant_Type']
 
+    logging.info('Loading alteration data...')
     for maf_type in maf_types:
         maf_arg = getattr(args, maf_type, None)
         if maf_arg:
             input_mafs[maf_type] = pd.read_csv(maf_arg, low_memory=False, **read_csv_args)
+            for merge_column in merge_columns:
+                if merge_column not in input_mafs[maf_type].columns:
+                    logging.error('Merge column %s not found in %s sample (%s).' %
+                                  (merge_column, maf_type, maf_arg.name))
+                    sys.exit(2)
+
             logging.info('Loaded %s data from %s.' % (maf_type, maf_arg.name))
 
             # Correct column names (add maf_type suffix)
@@ -125,8 +132,8 @@ if __name__ == "__main__":
         ('Allele2_RNA_Tumor', 'Tumor_Seq_Allele2_rna_tumor'),
     ])
 
-    ref_count_column_prefix = 'Alt_Read_Count'
-    alt_count_column_prefix = 'Ref_Read_Count'
+    ref_count_column_prefix = 'Ref_Read_Count'
+    alt_count_column_prefix = 'Alt_Read_Count'
     vaf_column_prefix = 'VAF'
 
     maf_type_printable = {
@@ -183,9 +190,20 @@ if __name__ == "__main__":
                 raise Exception('Error: Alternate read count column %s not found in %s sample.' %
                                 (alt_count_column, input_type))
 
-            ref_count = float(row[ref_column]) if isinstance(row[ref_column], float) else 0
-            alt_count = float(row[alt_column]) if isinstance(row[ref_column], float) else 0
+            # Cast ref and alt counts to float; if unable to do so, set as nan.
+            try:
+                ref_count = float(row[ref_column]) if not pd.isnull(row[ref_column]) else 0
+            except ValueError:
+                ref_count = float('nan')
+
+            try:
+                alt_count = float(row[alt_column]) if not pd.isnull(row[alt_column]) else 0
+            except ValueError:
+                alt_count = float('nan')
+
             if ref_count == 0 and alt_count == 0:
+                vaf = 0
+            elif ref_count == float('nan') or alt_count == float('nan'):
                 vaf = float('nan')
             else:
                 vaf = alt_count / (ref_count + alt_count)
