@@ -3,10 +3,10 @@ import pandas as pd
 import ConfigParser
 import sys
 import logging
-from scenarios import Scenario
 from collections import OrderedDict
+from scenarios import Scenario
 
-CONFIG_FILENAME='r2d2.ini'
+CONFIG_FILENAME = 'r2d2.ini'
 
 if __name__ == "__main__":
     # Arguments may override config settings
@@ -72,12 +72,6 @@ if __name__ == "__main__":
         sys.exit(2)
 
     # Load all input files into pandas DFs.
-    maf_inputs = []
-    for maf_type in maf_types:
-        # The parameters users pass maf input files in are named the same as the maf types.
-        maf_arg = getattr(args, maf_type, None)
-        maf_input.append(
-    maf_dfs = load_input_mafs(
     read_csv_args = {'sep': '\t', 'comment': '#', 'skip_blank_lines': True, 'header': 0}
     input_mafs = {}
     merge_columns = ['Hugo_Symbol', 'Chromosome', 'Start_position', 'End_position',
@@ -228,7 +222,6 @@ if __name__ == "__main__":
             row_dest[ref_output_column].append(counts[maf_type]['ref_count'])
             row_dest[alt_output_column].append(counts[maf_type]['alt_count'])
             row_dest[vaf_output_column].append(counts[maf_type]['vaf'])
-
 
     # Write output.
     output_df = pd.DataFrame.from_dict(output_rows)
