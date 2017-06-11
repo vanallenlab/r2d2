@@ -173,8 +173,8 @@ if __name__ == "__main__":
         expected_rows['%s_%s' % (vaf_column_prefix, maf_type_printable[maf_type])] = []
 
     for i, row in input_merge.iterrows():
-        # We only consider single-nucleotide polymorphisms (exclude DNPs, TNPs, etc.)
-        if row['Variant_Type'] != 'SNP':
+        # We exclude DNPs, TNPs, etc.
+        if row['Variant_Type'] not in ['SNP', 'INS', 'DEL']:
             continue
 
         # Quad is a dictionary mapping each maf type to the corresponding VAFs on this row.
