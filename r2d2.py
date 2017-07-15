@@ -13,6 +13,7 @@ if __name__ == "__main__":
     config = ConfigParser.ConfigParser()
     config.read(CONFIG_FILENAME)
     scenarios_config_filename = config.get('Settings', 'scenarios_config_file')
+    sample_id_header = config.get('Settings', 'sample_id_header')
     logging.basicConfig(level=logging.INFO)
 
     # Argument parsing
@@ -51,6 +52,9 @@ if __name__ == "__main__":
                         help='Space-separated list of extra columns to include from the RNA normal file.')
     parser.add_argument('-rtxc', '--rna_tumor_extra_columns', type=str,
                         help='Space-separated list of extra columns to include from the RNA tumor file.')
+
+    parser.add_argument('-id', '--sample_id', type=str,
+                        help='Sample ID string to include in each row of output data.')
 
     args = parser.parse_args()
 
@@ -243,10 +247,20 @@ if __name__ == "__main__":
 
     # Write output.
     output_df = pd.DataFrame.from_dict(output_rows)
+
+    # Prepend sample_id to each row if present
+    sample_id = getattr(args, 'sample_id', None)
+    if sample_id:
+        output_df.insert(0, sample_id_header, sample_id)
+
     output_df.to_csv(args.output, index=False, header=True, sep='\t')
     logging.info('Wrote %s discovered scenarios to %s.' % (len(output_df.index), args.output.name))
 
     if args.total_output:
-        total_df = pd.concat([output_df, pd.DataFrame.from_dict(expected_rows)], axis=0)
+        expected_df = pd.DataFrame.from_dict(expected_rows)
+        if sample_id:
+            expected_df.insert(0, sample_id_header, sample_id)
+
+        total_df = pd.concat([output_df, expected_df], axis=0)
         total_df.to_csv(args.total_output, index=False, header=True, sep='\t')
         logging.info('Wrote %s total variants to %s.' % (len(total_df.index), args.total_output.name))
