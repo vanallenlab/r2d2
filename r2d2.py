@@ -123,6 +123,11 @@ if __name__ == "__main__":
 
     logging.info('Analyzing %s total variants...' % len(input_merge.index))
 
+    maf_type_printable = {
+            'dna_normal': 'DNA_Normal', 'dna_tumor': 'DNA_Tumor',
+            'rna_normal': 'RNA_Normal', 'rna_tumor': 'RNA_Tumor'
+    }
+
     # Extract dna_normal/dna_tumor/rna_normal/rna_tumor values from DF.
     output_maf_map = OrderedDict([
         ('Hugo_Symbol', 'Hugo_Symbol'),
@@ -133,24 +138,19 @@ if __name__ == "__main__":
         ('Variant_Classification', 'Variant_Classification'),
         ('Variant_Type', 'Variant_Type'),
         ('Reference_Allele', 'Reference_Allele_dna_normal'),
-        ('Allele1_DNA_Normal', 'Tumor_Seq_Allele1_dna_normal'),
-        ('Allele2_DNA_Normal', 'Tumor_Seq_Allele2_dna_normal'),
-        ('Allele1_DNA_Tumor', 'Tumor_Seq_Allele1_dna_tumor'),
-        ('Allele2_DNA_Tumor', 'Tumor_Seq_Allele2_dna_tumor'),
-        ('Allele1_RNA_Normal', 'Tumor_Seq_Allele1_rna_normal'),
-        ('Allele2_RNA_Normal', 'Tumor_Seq_Allele2_rna_normal'),
-        ('Allele1_RNA_Tumor', 'Tumor_Seq_Allele1_rna_tumor'),
-        ('Allele2_RNA_Tumor', 'Tumor_Seq_Allele2_rna_tumor'),
     ])
+
+    for maf_type in maf_types:
+        allele1_k = 'Allele1_%s' % maf_type_printable[maf_type]
+        allele1_v = 'Tumor_Seq_Allele1_%s' % maf_type
+        allele2_k = 'Allele2_%s' % maf_type_printable[maf_type]
+        allele2_v = 'Tumor_Seq_Allele2_%s' % maf_type
+        output_maf_map[allele1_k] = allele1_v
+        output_maf_map[allele2_k] = allele2_v
 
     ref_count_column_prefix = 'Ref_Read_Count'
     alt_count_column_prefix = 'Alt_Read_Count'
     vaf_column_prefix = 'VAF'
-
-    maf_type_printable = {
-            'dna_normal': 'DNA_Normal', 'dna_tumor': 'DNA_Tumor',
-            'rna_normal': 'RNA_Normal', 'rna_tumor': 'RNA_Tumor'
-    }
 
     # Add column mappings for all extra columns seen in all 4 files
     if args.extra_columns:
