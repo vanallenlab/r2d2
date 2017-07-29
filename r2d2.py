@@ -1,6 +1,7 @@
 import argparse
 import pandas as pd
 import ConfigParser
+import os
 import sys
 import logging
 from collections import OrderedDict
@@ -9,11 +10,6 @@ from scenarios import Scenario
 CONFIG_FILENAME = 'r2d2.ini'
 
 if __name__ == "__main__":
-    # Arguments may override config settings
-    config = ConfigParser.ConfigParser()
-    config.read(CONFIG_FILENAME)
-    scenarios_config_filename = config.get('Settings', 'scenarios_config_file')
-    sample_id_header = config.get('Settings', 'sample_id_header')
     logging.basicConfig(level=logging.INFO)
 
     # Argument parsing
@@ -24,6 +20,7 @@ if __name__ == "__main__":
     parser.add_argument('-rt', '--rna_tumor', type=argparse.FileType('r'), help='Path to RNA tumor MAF.')
     parser.add_argument('-o', '--output', type=argparse.FileType('w'), help='Path to output file.')
     parser.add_argument('-to', '--total_output', type=argparse.FileType('w'), help='Path to output file.')
+    parser.add_argument('-cp', '--config_path', type=str, help='Path to directory containing config files.')
 
     parser.add_argument('-dnrc', '--dna_normal_ref_count', type=str,
                         help='Column name containing count of reference reads in DNA normal file.')
@@ -57,6 +54,16 @@ if __name__ == "__main__":
                         help='Sample ID string to include in each row of output data.')
 
     args = parser.parse_args()
+
+    # Arguments may override config settings
+    config_file_path = CONFIG_FILENAME
+    if args.config_path:
+        config_file_path = os.path.join(args.config_path, config_file_path)
+
+    config = ConfigParser.ConfigParser()
+    config.read(config_file_path)
+    scenarios_config_filename = config.get('Settings', 'scenarios_config_file')
+    sample_id_header = config.get('Settings', 'sample_id_header')
 
     maf_types = ['dna_normal', 'dna_tumor', 'rna_normal', 'rna_tumor']
     ref_count_column = 't_ref_count'
