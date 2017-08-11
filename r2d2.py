@@ -62,7 +62,9 @@ if __name__ == "__main__":
 
     config = ConfigParser.ConfigParser()
     config.read(config_file_path)
-    scenarios_config_filename = config.get('Settings', 'scenarios_config_file')
+    scenarios_config_file_path = config.get('Settings', 'scenarios_config_file')
+    if args.config_path:
+        scnarios_config_file_path = os.path.join(args.config_path, config_file_path)
     sample_id_header = config.get('Settings', 'sample_id_header')
 
     maf_types = ['dna_normal', 'dna_tumor', 'rna_normal', 'rna_tumor']
@@ -230,7 +232,7 @@ if __name__ == "__main__":
             for input_type in input_mafs.keys():
                 vaf_quad[input_type] = counts[input_type]['vaf']
 
-            scenario = Scenario(vaf_quad, scenarios_config_filename)
+            scenario = Scenario(vaf_quad, scenarios_config_file_path)
             row_dest = output_rows
             scenario_name = scenario.name
         except Scenario.NoScenarioException as e:
