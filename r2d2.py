@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     scenarios_config_file_path = config.get('Settings', 'scenarios_config_file')
     if args.config_path:
-        scenarios_config_file_path = os.path.join(args.config_path, config_file_path)
+        scenarios_config_file_path = os.path.join(args.config_path, scenarios_config_file_path)
 
     logging.info('Loading scenario definitions from %s.' % scenarios_config_file_path)
 
