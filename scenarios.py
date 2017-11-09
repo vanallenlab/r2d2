@@ -91,10 +91,10 @@ class Scenario(object):
 class GermlineAllInputs(Scenario):
     name = 'germline_all_inputs'
 
-class GermlineNoRnaNormal(Scenarios):
+class GermlineNoRnaNormal(Scenario):
     name = 'germline_no_rna_normal'
     
-class GermlineNormalOnly(Scenarios):
+class GermlineNormalOnly(Scenario):
     name = 'germline_normal_only'
 
 class RNAedAllInputs(Scenario):
@@ -136,7 +136,7 @@ class TVSLAllInputs(Scenario):
 class LOHAltAllInputs(Scenario):
     name = 'loh_alt_all_inputs'
 
-class LOHAltNoRNANormal(Scenarios):
+class LOHAltNoRNANormal(Scenario):
     name = 'loh_alt_no_rna_normal'
     
 class LOHAltDNAOnly(Scenario):
