@@ -87,75 +87,75 @@ class Scenario(object):
                     return object.__new__(subclass)
 
         raise Scenario.NoScenarioException('No matching Scenario for quad %s' % quad)
+        
+class GermlineAllInputs(Scenario):
+    name = 'germline_all_inputs'
 
+class GermlineNoRnaNormal(Scenarios):
+    name = 'germline_no_rna_normal'
+    
+class GermlineNormalOnly(Scenarios):
+    name = 'germline_normal_only'
 
 class RNAedAllInputs(Scenario):
     name = 'rnaed_all_inputs'
 
-
+class RNAedNoRNANormal(Scenario):
+    name = 'rnaed_no_rna_normal'
+    
 class RNAedNormalOnly(Scenario):
     name = 'rnaed_normal_only'
-
 
 class TRNAedAllInputs(Scenario):
     name = 't_rnaed_all_inputs'
 
-
-class TRNAedNoDNANormal(Scenario):
-    name = 't_rnaed_no_dna_normal'
-
-
 class VSEAllInputs(Scenario):
     name = 'vse_all_inputs'
 
-
+class VSENoRNANOrmal(Scenario):
+    name = 'vse_no_rna_normal'
+    
 class VSENormalOnly(Scenario):
     name = 'vse_normal_only'
-
 
 class TVSEAllInputs(Scenario):
     name = 't_vse_all_inputs'
 
-
-class TVSENoDNANormal(Scenario):
-    name = 't_vse_no_dna_normal'
-
-
 class VSLAllInputs(Scenario):
     name = 'vsl_all_inputs'
 
-
+class VSLNoRNANormal(Scenario):
+    name = 'vsl_no_rna_normal'
+    
 class VSLNormalOnly(Scenario):
     name = 'vsl_normal_only'
-
 
 class TVSLAllInputs(Scenario):
     name = 't_vsl_all_inputs'
 
-
-class TVSLNoDNANormal(Scenario):
-    name = 't_vsl_no_dna_normal'
-
-
 class LOHAltAllInputs(Scenario):
     name = 'loh_alt_all_inputs'
 
-
+class LOHAltNoRNANormal(Scenarios):
+    name = 'loh_alt_no_rna_normal'
+    
 class LOHAltDNAOnly(Scenario):
     name = 'loh_alt_dna_only'
-
-
-class LOHCNAllInputs(Scenario):
-    name = 'loh_cn_all_inputs'
-
-
-class LOHCNDNAOnly(Scenario):
-    name = 'loh_cn_dna_only'
-
+    
+class LOHRefAllInputs(Scenario):
+    name = 'loh_ref_all_inputs'
+    
+class LOHRefNoRNANormal(Scenario):
+    name = 'loh_ref_no_rna_normal'
+    
+class LOHRefDNAOnly(Scenario):
+    name = 'loh_ref_dna_only'
 
 class SomaticAllInputs(Scenario):
     name = 'somatic_all_inputs'
-
+    
+class SomaticNoRNANormla(Scenario):
+    name = 'somatic_no_rna_normal'
 
 class SomaticDNAOnly(Scenario):
     name = 'somatic_dna_only'
