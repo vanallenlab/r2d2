@@ -32,8 +32,8 @@ class Condition(object):
                 (clause['type'] == '<=' and value <= clause['threshold']) or
                 (clause['type'] == '>' and value > clause['threshold']) or
                 (clause['type'] == '>=' and value >= clause['threshold']) or
-                (clause['type'] == '=' and clause['threshold'][0] <= value <= clause['threshold'][1]) or
-                (clause['type'] == '<>' and clause['threshold'][0] <= value <= clause['threshold'][1])
+                (clause['type'] == '<>' and value >= clause['threshold']) or
+                (clause['type'] == '=' and clause['threshold'][0] <= value <= clause['threshold'][1])
                ):
                 return True
 
