@@ -3,7 +3,7 @@ import ConfigParser
 SCENARIOS_CONFIG = 'scenarios.ini'
 
 class Condition(object):
-    conditions_types = ['=', '<', '<=', '>', '>=']
+    conditions_types = ['=', '<', '<=', '>', '>=','<>']
 
     def __init__(self, condition_str):
         self._clauses = []
