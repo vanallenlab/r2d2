@@ -3,7 +3,7 @@ import ConfigParser
 SCENARIOS_CONFIG = 'scenarios.ini'
 
 class Condition(object):
-    conditions_types = ['=', '<', '<=', '>', '>=','<>']
+    conditions_types = ['=', '<', '<=', '>', '>=', '<>']
 
     def __init__(self, condition_str):
         self._clauses = []
@@ -32,7 +32,7 @@ class Condition(object):
                 (clause['type'] == '<=' and value <= clause['threshold']) or
                 (clause['type'] == '>' and value > clause['threshold']) or
                 (clause['type'] == '>=' and value >= clause['threshold']) or
-                (clause['type'] == '<>' and value >= clause['threshold']) or
+                (clause['type'] == '<>' and value != clause['threshold']) or
                 (clause['type'] == '=' and clause['threshold'][0] <= value <= clause['threshold'][1])
                ):
                 return True
@@ -89,14 +89,6 @@ class Scenario(object):
 
         raise Scenario.NoScenarioException('No matching Scenario for quad %s' % quad)
         
-class GermlineAllInputs(Scenario):
-    name = 'germline_all_inputs'
-
-class GermlineNoRnaNormal(Scenario):
-    name = 'germline_no_rna_normal'
-    
-class GermlineNormalOnly(Scenario):
-    name = 'germline_normal_only'
 
 class RNAedAllInputs(Scenario):
     name = 'rnaed_all_inputs'
@@ -160,3 +152,13 @@ class SomaticNoRNANormla(Scenario):
 
 class SomaticDNAOnly(Scenario):
     name = 'somatic_dna_only'
+
+class GermlineAllInputs(Scenario):
+    name = 'germline_all_inputs'
+
+class GermlineNoRnaNormal(Scenario):
+    name = 'germline_no_rna_normal'
+
+class GermlineNormalOnly(Scenario):
+    name = 'germline_normal_only'
+
