@@ -163,7 +163,7 @@ if __name__ == "__main__":
     if args.extra_columns:
         for xc in args.extra_columns.split():
             for maf_type in maf_types:
-                for column_suffix in maf_type_printable[maf_type]:
+                for column_suffix in maf_type_printable:
                     this_column_name = '%s_%s' % (xc, maf_type_printable[column_suffix])
                     output_maf_map[this_column_name] = '%s_%s' % (xc, column_suffix)
 
