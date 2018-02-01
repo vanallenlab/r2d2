@@ -93,7 +93,7 @@ if __name__ == "__main__":
     read_csv_args = {'sep': '\t', 'comment': '#', 'skip_blank_lines': True, 'header': 0}
     input_mafs = {}
     merge_columns = ['Hugo_Symbol', 'Chromosome', 'Start_position', 'End_position',
-                     'Strand', 'Variant_Classification', 'Variant_Type']
+                     'Strand', 'Variant_Classification', 'Variant_Type','Transcript_Exon', 'Transcript_Position', 'cDNA_Change', 'Codon_Change', 'Protein_Change', 'GO_Biological_Process', 'COSMIC_tissue_types_affected', 'gc_content', 'i_ExAC_AC_Adj', 'i_ExAC_AF', 'i_ExAC_CSQ', 'i_HGVS_genomic_change', 'i_HGVS_protein_change', 'i_genotype_quality', 'i_mapping_quality', 'i_read_depth', 'i_variant_quality_by_depth']
 
     logging.info('Loading alteration data...')
     for maf_type in maf_types:
