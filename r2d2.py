@@ -144,7 +144,6 @@ if __name__ == "__main__":
         ('Strand', 'Strand'),
         ('Variant_Classification', 'Variant_Classification'),
         ('Variant_Type', 'Variant_Type'),
-        ('Reference_Allele', 'Reference_Allele_dna_normal'),
         ('Transcript_Exon', 'Transcript_Exon'),
         ('Transcript_Position', 'Transcript_Position'),
         ('cDNA_Change', 'cDNA_Change'),
@@ -161,7 +160,8 @@ if __name__ == "__main__":
         ('i_genotype_quality', 'i_genotype_quality'),
         ('i_mapping_quality', 'i_mapping_quality'),
         ('i_read_depth', 'i_read_depth'),
-        ('i_variant_quality_by_depth', 'i_variant_quality_by_depth'), 
+        ('i_variant_quality_by_depth', 'i_variant_quality_by_depth'),
+        ('Reference_Allele', 'Reference_Allele_dna_normal'),
     ])
 
     for maf_type in maf_types:
