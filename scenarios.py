@@ -89,15 +89,29 @@ class Scenario(object):
 
         raise Scenario.NoScenarioException('No matching Scenario for quad %s' % quad)
         
+class GermlineMosaicAllInputs(Scenario):
+    name = 'germline_mosaic_all_inputs'
+
+class GermlineMosaicNoRnaNormal(Scenario):
+	name = 'germline_mosaic_no_rna_normal'
+	
+class GermlineMosaicDnaOnly(Scenario):
+	name = 'germline_mosaic_DNA_only'
+	
+class TumorInNormalAllInputs(Scenario):
+	name = 'tumor_in_normal_all_inputs'
+	
+class TumorInNormalNoRnaNormal(Scenario):
+	name = 'tumor_in_normal_no_rna_normal'
+
+class TumorInNormalDnaOnly(Scenario):
+	name = 'tumor_in_normal_DNA_only'
 
 class RNAedAllInputs(Scenario):
     name = 'rnaed_all_inputs'
 
 class RNAedNoRNANormal(Scenario):
     name = 'rnaed_no_rna_normal'
-    
-class RNAedNormalOnly(Scenario):
-    name = 'rnaed_normal_only'
 
 class TRNAedAllInputs(Scenario):
     name = 't_rnaed_all_inputs'
@@ -113,6 +127,9 @@ class VSENormalOnly(Scenario):
 
 class TVSEAllInputs(Scenario):
     name = 't_vse_all_inputs'
+	
+class VSETumorOnly(Scenario):
+	name = 'vse_tumor_only'
 
 class VSLAllInputs(Scenario):
     name = 'vsl_all_inputs'
@@ -125,6 +142,9 @@ class VSLNormalOnly(Scenario):
 
 class TVSLAllInputs(Scenario):
     name = 't_vsl_all_inputs'
+	
+class VSLTumorOnly(Scenario):
+	name = 'vsl_tumor_only'
 
 class LOHAltAllInputs(Scenario):
     name = 'loh_alt_all_inputs'
