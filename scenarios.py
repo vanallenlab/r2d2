@@ -2,6 +2,7 @@ import ConfigParser
 
 SCENARIOS_CONFIG = 'scenarios.ini'
 
+
 class Condition(object):
     conditions_types = ['=', '<', '<=', '>', '>=', '<>']
 
