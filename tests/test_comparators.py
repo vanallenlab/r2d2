@@ -4,6 +4,7 @@ import os
 import re
 from collections import defaultdict
 from scenarios import Condition, Scenario
+from r2d2 import get_analysis_type, AnalysisTypes
 
 
 class TestCondition(unittest.TestCase):

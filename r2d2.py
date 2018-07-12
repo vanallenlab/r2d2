@@ -9,85 +9,86 @@ from scenarios import Scenario
 
 CONFIG_FILENAME = 'r2d2.ini'
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
 
-    # Argument parsing
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-dn', '--dna_normal', type=argparse.FileType('r'), help='Path to DNA normal MAF.')
-    parser.add_argument('-dt', '--dna_tumor', type=argparse.FileType('r'), help='Path to DNA tumor MAF.')
-    parser.add_argument('-rn', '--rna_normal', type=argparse.FileType('r'), help='Path to RNA normal MAF.')
-    parser.add_argument('-rt', '--rna_tumor', type=argparse.FileType('r'), help='Path to RNA tumor MAF.')
-    parser.add_argument('-o', '--output', type=argparse.FileType('w'), help='Path to output file.')
-    parser.add_argument('-to', '--total_output', type=argparse.FileType('w'), help='Path to output file.')
-    parser.add_argument('-cp', '--config_path', type=str, help='Path to directory containing config files.')
+class MafTypes(object):
+    dna_normal = 'dna_normal'
+    dna_tumor = 'dna_tumor'
+    rna_normal = 'rna_normal'
+    rna_tumor = 'rna_tumor'
 
-    parser.add_argument('-dnrc', '--dna_normal_ref_count', type=str,
-                        help='Column name containing count of reference reads in DNA normal file.')
-    parser.add_argument('-dnac', '--dna_normal_alt_count', type=str,
-                        help='Column name containing count of alternate reads in DNA normal file.')
-    parser.add_argument('-dtrc', '--dna_tumor_ref_count', type=str,
-                        help='Column name containing count of reference reads in DNA tumor file.')
-    parser.add_argument('-dtac', '--dna_tumor_alt_count', type=str,
-                        help='Column name containing count of alternate reads in DNA tumor file.')
-    parser.add_argument('-rnrc', '--rna_normal_ref_count', type=str,
-                        help='Column name containing count of reference reads in RNA normal file.')
-    parser.add_argument('-rnac', '--rna_normal_alt_count', type=str,
-                        help='Column name containing count of alternate reads in RNA normal file.')
-    parser.add_argument('-rtrc', '--rna_tumor_ref_count', type=str,
-                        help='Column name containing count of reference reads in RNA tumor file.')
-    parser.add_argument('-rtac', '--rna_tumor_alt_count', type=str,
-                        help='Column name containing count of alternate reads in RNA tumor file.')
+    @classmethod
+    def all(cls):
+        return [MafTypes.dna_normal,
+                MafTypes.dna_tumor,
+                MafTypes.rna_normal,
+                MafTypes.rna_tumor]
 
-    parser.add_argument('-xc', '--extra_columns', type=str,
-                        help='Space-separated list of extra columns to include from each input file.')
-    parser.add_argument('-dnxc', '--dna_normal_extra_columns', type=str,
-                        help='Space-separated list of extra columns to include from the DNA normal file.')
-    parser.add_argument('-dtxc', '--dna_tumors_extra_columns', type=str,
-                        help='Space-separated list of extra columns to include from the DNA tumor file.')
-    parser.add_argument('-rnxc', '--rna_normal_extra_columns', type=str,
-                        help='Space-separated list of extra columns to include from the RNA normal file.')
-    parser.add_argument('-rtxc', '--rna_tumor_extra_columns', type=str,
-                        help='Space-separated list of extra columns to include from the RNA tumor file.')
 
-    parser.add_argument('-id', '--sample_id', type=str,
-                        help='Sample ID string to include in each row of output data.')
+class AnalysisTypes(object):
+    all_inputs = 'all_inputs'
+    no_rna_normal = 'no_rna_normal'
+    dna_only = 'dna_only'
+    normal_only = 'normal_only'
+    tumor_only = 'tumor_only'
 
-    args = parser.parse_args()
 
-    # Arguments may override config settings
-    config_file_path = CONFIG_FILENAME
-    if args.config_path:
-        config_file_path = os.path.join(args.config_path, config_file_path)
+ANALYSIS_SAMPLES = {
+    AnalysisTypes.all_inputs: [MafTypes.dna_normal, MafTypes.dna_tumor, MafTypes.rna_normal, MafTypes.rna_tumor],
+    AnalysisTypes.no_rna_normal: [MafTypes.dna_normal, MafTypes.dna_tumor, MafTypes.rna_tumor],
+    AnalysisTypes.dna_only: [MafTypes.dna_normal, MafTypes.dna_tumor],
+    AnalysisTypes.normal_only: [MafTypes.dna_normal, MafTypes.rna_normal],
+    AnalysisTypes.tumor_only: [MafTypes.dna_tumor, MafTypes.rna_tumor]
+}
 
-    config = ConfigParser.ConfigParser()
-    config.read(config_file_path)
-    logging.info('Loading configuration from %s.' % config_file_path)
 
-    scenarios_config_file_path = config.get('Settings', 'scenarios_config_file')
-    if args.config_path:
-        scenarios_config_file_path = os.path.join(args.config_path, scenarios_config_file_path)
+class R2D2(object):
+    def __init__(self, analysis_type=None,
+                 dna_normal=None, dna_tumor=None, rna_normal=None, rna_tumor=None, output=None, total_output=None,
+                 config_path=None,
+                 dna_normal_ref_count='',
+                 dna_normal_alt_count='',
+                 dna_tumor_ref_count='',
+                 dna_tumor_alt_count='',
+                 rna_normal_ref_count='',
+                 rna_normal_alt_count='',
+                 rna_tumor_ref_count='',
+                 rna_tumor_alt_count='',
+                 extra_columns=None,
+                 dna_normal_extra_columns=None,
+                 dna_tumor_extra_columns=None,
+                 rna_normal_extra_columns=None,
+                 rna_tumor_extra_columns=None,
+                 sample_id=''):
 
-    logging.info('Loading scenario definitions from %s.' % scenarios_config_file_path)
+        self.analysis_type = analysis_type
+        self.dna_normal = dna_normal
+        self.dna_tumor = dna_tumor
+        self.rna_normal = rna_normal
+        self.rna_tumor = rna_tumor
+        self.output = output
+        self.total_output = total_output
+        self.sample_id = sample_id
 
-    sample_id_header = config.get('Settings', 'sample_id_header')
+        # Arguments may override config settings
+        config_file_name = CONFIG_FILENAME
+        if config_path is not None:
+            self.config_file_path = os.path.join(args.config_path, config_file_name)
+            config_parser = ConfigParser.ConfigParser()
+            config_parser.read(self.config_file_path)
+            logging.info('Loading configuration from {}'.format(self.config_file_path))
 
-    maf_types = ['dna_normal', 'dna_tumor', 'rna_normal', 'rna_tumor']
+            scenarios_config_file_path = config_parser.get('Settings', 'scenarios_config_file')
+            scenarios_config_file_path = os.path.join(args.config_path, scenarios_config_file_path)
+            logging.info('Loading scenario definitions from {}'.format(scenarios_config_file_path))
+
+            sample_id_header = config_parser.get('Settings', 'sample_id_header')
+
+        logging.info('Analysis type is {}'.format(self.analysis_type))
+        samples_for_analysis = ANALYSIS_SAMPLES.get(self.analysis_type)
+
+    maf_types = MafTypes.all()
     ref_count_column = 't_ref_count'
     alt_count_column = 't_alt_count'
-
-    # Remove maf_types we weren't given from the maf_types list.
-    # We cannot modify a list while looping over it, so we use a list comprehension to make a copy.
-    for maf_type in [maf_type for maf_type in maf_types]:
-        # (E.g., --dna_normal provides the maf type 'dna_normal' file.
-        if not getattr(args, maf_type, None):
-            maf_types.remove(maf_type)
-            continue
-
-    # Check that at least one input file was provided.
-    if not maf_types:
-        logging.error('No input files provided.')
-        sys.exit(2)
 
     # Load all input files into pandas DFs.
     read_csv_args = {'sep': '\t', 'comment': '#', 'skip_blank_lines': True, 'header': 0}
@@ -278,3 +279,110 @@ if __name__ == "__main__":
         total_df = pd.concat([output_df, expected_df], axis=0)
         total_df.to_csv(args.total_output, index=False, header=True, sep='\t')
         logging.info('Wrote %s total variants to %s.' % (len(total_df.index), args.total_output.name))
+
+
+def get_analysis_type(dna_normal=None, dna_tumor=None, rna_normal=None, rna_tumor=None):
+    num_files = len([f for f in [dna_normal, dna_tumor, rna_normal, rna_tumor] if f is not None])
+    if num_files == 4:
+        # If all four files are present, simply run the canonical R2D2 setup
+        if dna_normal and dna_tumor and rna_normal and rna_tumor:
+            return [AnalysisTypes.all_inputs]
+
+    elif 1 < num_files <= 3:
+        if dna_normal and dna_tumor and rna_tumor:
+            # If all three are provided, we will run the algorithm with all three
+            return [AnalysisTypes.no_rna_normal]
+
+        analysis_types_list = []
+        # There are 3 files but they are not the canonical 3 dna_normal, dna_tumor, rna_tumor combination, or there are
+        # only two files
+        if dna_tumor and dna_normal:
+            analysis_types_list.append(AnalysisTypes.dna_only)
+        if dna_tumor and rna_tumor:
+            analysis_types_list.append(AnalysisTypes.tumor_only)
+        if dna_normal and rna_normal:
+            analysis_types_list.append(AnalysisTypes.normal_only)
+        return analysis_types_list
+
+    elif num_files <= 1:
+        # No analyses specified for 1 or less files
+        return []
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+
+    # Argument parsing
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-dn', '--dna_normal', type=argparse.FileType('r'), help='Path to DNA normal MAF.')
+    parser.add_argument('-dt', '--dna_tumor', type=argparse.FileType('r'), help='Path to DNA tumor MAF.')
+    parser.add_argument('-rn', '--rna_normal', type=argparse.FileType('r'), help='Path to RNA normal MAF.')
+    parser.add_argument('-rt', '--rna_tumor', type=argparse.FileType('r'), help='Path to RNA tumor MAF.')
+    parser.add_argument('-o', '--output', type=argparse.FileType('w'), help='Path to output file.')
+    parser.add_argument('-to', '--total_output', type=argparse.FileType('w'), help='Path to output file.')
+    parser.add_argument('-cp', '--config_path', type=str, help='Path to directory containing config files.')
+
+    parser.add_argument('-dnrc', '--dna_normal_ref_count', type=str,
+                        help='Column name containing count of reference reads in DNA normal file.')
+    parser.add_argument('-dnac', '--dna_normal_alt_count', type=str,
+                        help='Column name containing count of alternate reads in DNA normal file.')
+    parser.add_argument('-dtrc', '--dna_tumor_ref_count', type=str,
+                        help='Column name containing count of reference reads in DNA tumor file.')
+    parser.add_argument('-dtac', '--dna_tumor_alt_count', type=str,
+                        help='Column name containing count of alternate reads in DNA tumor file.')
+    parser.add_argument('-rnrc', '--rna_normal_ref_count', type=str,
+                        help='Column name containing count of reference reads in RNA normal file.')
+    parser.add_argument('-rnac', '--rna_normal_alt_count', type=str,
+                        help='Column name containing count of alternate reads in RNA normal file.')
+    parser.add_argument('-rtrc', '--rna_tumor_ref_count', type=str,
+                        help='Column name containing count of reference reads in RNA tumor file.')
+    parser.add_argument('-rtac', '--rna_tumor_alt_count', type=str,
+                        help='Column name containing count of alternate reads in RNA tumor file.')
+
+    parser.add_argument('-xc', '--extra_columns', type=str,
+                        help='Space-separated list of extra columns to include from each input file.')
+    parser.add_argument('-dnxc', '--dna_normal_extra_columns', type=str,
+                        help='Space-separated list of extra columns to include from the DNA normal file.')
+    parser.add_argument('-dtxc', '--dna_tumors_extra_columns', type=str,
+                        help='Space-separated list of extra columns to include from the DNA tumor file.')
+    parser.add_argument('-rnxc', '--rna_normal_extra_columns', type=str,
+                        help='Space-separated list of extra columns to include from the RNA normal file.')
+    parser.add_argument('-rtxc', '--rna_tumor_extra_columns', type=str,
+                        help='Space-separated list of extra columns to include from the RNA tumor file.')
+
+    parser.add_argument('-id', '--sample_id', type=str,
+                        help='Sample ID string to include in each row of output data.')
+
+    args = parser.parse_args()
+
+    analysis_types = get_analysis_type(dna_normal=args.dn, dna_tumor=args.dt, rna_normal=args.rn, rna_tumor=args.rt)
+    if len(analysis_types) == 0:
+        logging.error('No analysis can be conducted with the {} maf files provided.'.format(len({args.dn,
+                                                                                                 args.dt,
+                                                                                                 args.rn,
+                                                                                                 args.rt})))
+        sys.exit(0)
+
+    for analysis_type in analysis_types:
+        r2d2 = R2D2(analysis_type=analysis_type,
+                    dna_normal=args.dn,
+                    dna_tumor=args.dt,
+                    rna_normal=args.rn,
+                    rna_tumor=args.rt,
+                    output=args.o,
+                    total_output=args.to,
+                    config_path=args.cp,
+                    dna_normal_ref_count=args.dnrc,
+                    dna_normal_alt_count=args.dnac,
+                    dna_tumor_ref_count=args.dtrc,
+                    dna_tumor_alt_count=args.dtac,
+                    rna_normal_ref_count=args.rnrf,
+                    rna_normal_alt_count=args.rnac,
+                    rna_tumor_ref_count=args.rtrc,
+                    rna_tumor_alt_count=args.rtac,
+                    extra_columns=args.xc,
+                    dna_normal_extra_columns=args.dnxc,
+                    dna_tumor_extra_columns=args.dtxc,
+                    rna_normal_extra_columns=args.rnxc,
+                    rna_tumor_extra_columns=args.rtxc,
+                    sample_id=args.id)
