@@ -68,7 +68,9 @@ class R2D2(object):
         self.output = output
         self.total_output = total_output
         self.sample_id = sample_id
-
+        self.read_csv_args = {'sep': '\t', 'comment': '#', 'skip_blank_lines': True, 'header': 0}
+        self.merge_columns = ['Hugo_Symbol', 'Chromosome', 'Start_position', 'End_position', 'Strand',
+                              'Variant_Classification', 'Variant_Type']
         # Arguments may override config settings
         config_file_name = CONFIG_FILENAME
         if config_path is not None:
@@ -80,205 +82,201 @@ class R2D2(object):
             scenarios_config_file_path = config_parser.get('Settings', 'scenarios_config_file')
             scenarios_config_file_path = os.path.join(args.config_path, scenarios_config_file_path)
             logging.info('Loading scenario definitions from {}'.format(scenarios_config_file_path))
-
             sample_id_header = config_parser.get('Settings', 'sample_id_header')
 
         logging.info('Analysis type is {}'.format(self.analysis_type))
-        samples_for_analysis = ANALYSIS_SAMPLES.get(self.analysis_type)
+        maf_types_for_analysis = ANALYSIS_SAMPLES.get(self.analysis_type)
+        self.maf_sample_paths = { maf_type: self.__getattribute__(maf_type) for maf_type in maf_types_for_analysis }
+        self.input_merge = None
 
-    maf_types = MafTypes.all()
-    ref_count_column = 't_ref_count'
-    alt_count_column = 't_alt_count'
+    def load_data(self):
+        ref_count_column = 't_ref_count'
+        alt_count_column = 't_alt_count'
 
-    # Load all input files into pandas DFs.
-    read_csv_args = {'sep': '\t', 'comment': '#', 'skip_blank_lines': True, 'header': 0}
-    input_mafs = {}
-    merge_columns = ['Hugo_Symbol', 'Chromosome', 'Start_position', 'End_position',
-                     'Strand', 'Variant_Classification', 'Variant_Type']
-
-    logging.info('Loading alteration data...')
-    for maf_type in maf_types:
-        maf_arg = getattr(args, maf_type, None)
-        if maf_arg:
-            input_mafs[maf_type] = pd.read_csv(maf_arg, low_memory=False, **read_csv_args)
-            for merge_column in merge_columns:
+        # Load all input files into pandas DFs.
+        input_mafs = {}
+        logging.info('Loading alteration data...')
+        for maf_type, maf_sample_path in self.maf_sample_paths.items():
+            input_mafs[maf_type] = pd.read_csv(maf_sample_path, low_memory=False, **self.read_csv_args)
+            for merge_column in self.merge_columns:
                 if merge_column not in input_mafs[maf_type].columns:
-                    logging.error('Merge column %s not found in %s sample (%s).' %
-                                  (merge_column, maf_type, maf_arg.name))
+                    logging.error('Merge column {} not found in {} sample ({}).'.format(merge_column,
+                                                                                        maf_type,
+                                                                                        maf_sample_path))
                     sys.exit(2)
 
-            logging.info('Loaded %s data from %s.' % (maf_type, maf_arg.name))
+            logging.info('Loaded {} data from {}.'.format(maf_type, maf_sample_path))
 
             # Correct column names (add maf_type suffix)
             new_columns = []
             for column in input_mafs[maf_type].columns:
                 new_column = column
                 # Don't change merge column names
-                if column not in merge_columns:
+                if column not in self.merge_columns:
                     new_column += '_' + maf_type
 
                 new_columns.append(new_column)
 
             input_mafs[maf_type].columns = new_columns
 
-    # Merge DFs on position into one agg DF.
-    input_merge = None
-    for maf_type in maf_types:
-        if input_merge is None:
-            input_merge = input_mafs[maf_type]
-        else:
-            input_merge = input_merge.merge(input_mafs[maf_type], how='outer', on=merge_columns)
+        # Merge DFs on position into one agg DF.
+        for maf_type, loaded_maf in input_mafs.items():
+            if self.input_merge is None:
+                self.input_merge = loaded_maf
+            else:
+                self.input_merge = self.input_merge.merge(loaded_maf, how='outer', on=self.merge_columns)
 
-    logging.info('Analyzing %s total variants...' % len(input_merge.index))
+        def analyze():
+            logging.info('Analyzing %s total variants...' % len(input_merge.index))
 
-    maf_type_printable = {
-            'dna_normal': 'DNA_Normal', 'dna_tumor': 'DNA_Tumor',
-            'rna_normal': 'RNA_Normal', 'rna_tumor': 'RNA_Tumor'
-    }
+            maf_type_printable = {
+                    'dna_normal': 'DNA_Normal', 'dna_tumor': 'DNA_Tumor',
+                    'rna_normal': 'RNA_Normal', 'rna_tumor': 'RNA_Tumor'
+            }
 
-    # Extract dna_normal/dna_tumor/rna_normal/rna_tumor values from DF.
-    output_maf_map = OrderedDict([
-        ('Hugo_Symbol', 'Hugo_Symbol'),
-        ('Chromosome', 'Chromosome'),
-        ('Start_position', 'Start_position'),
-        ('End_position', 'End_position'),
-        ('Strand', 'Strand'),
-        ('Variant_Classification', 'Variant_Classification'),
-        ('Variant_Type', 'Variant_Type'),
-        ('Reference_Allele', 'Reference_Allele_dna_normal'),
-    ])
+            # Extract dna_normal/dna_tumor/rna_normal/rna_tumor values from DF.
+            output_maf_map = OrderedDict([
+                ('Hugo_Symbol', 'Hugo_Symbol'),
+                ('Chromosome', 'Chromosome'),
+                ('Start_position', 'Start_position'),
+                ('End_position', 'End_position'),
+                ('Strand', 'Strand'),
+                ('Variant_Classification', 'Variant_Classification'),
+                ('Variant_Type', 'Variant_Type'),
+                ('Reference_Allele', 'Reference_Allele_dna_normal'),
+            ])
 
-    for maf_type in maf_types:
-        allele1_k = 'Allele1_%s' % maf_type_printable[maf_type]
-        allele1_v = 'Tumor_Seq_Allele1_%s' % maf_type
-        allele2_k = 'Allele2_%s' % maf_type_printable[maf_type]
-        allele2_v = 'Tumor_Seq_Allele2_%s' % maf_type
-        output_maf_map[allele1_k] = allele1_v
-        output_maf_map[allele2_k] = allele2_v
+            for maf_type in maf_types:
+                allele1_k = 'Allele1_%s' % maf_type_printable[maf_type]
+                allele1_v = 'Tumor_Seq_Allele1_%s' % maf_type
+                allele2_k = 'Allele2_%s' % maf_type_printable[maf_type]
+                allele2_v = 'Tumor_Seq_Allele2_%s' % maf_type
+                output_maf_map[allele1_k] = allele1_v
+                output_maf_map[allele2_k] = allele2_v
 
-    ref_count_column_prefix = 'Ref_Read_Count'
-    alt_count_column_prefix = 'Alt_Read_Count'
-    vaf_column_prefix = 'VAF'
+            ref_count_column_prefix = 'Ref_Read_Count'
+            alt_count_column_prefix = 'Alt_Read_Count'
+            vaf_column_prefix = 'VAF'
 
-    # Add column mappings for all extra columns seen in all 4 files
-    if args.extra_columns:
-        for xc in args.extra_columns.split():
+            # Add column mappings for all extra columns seen in all 4 files
+            if args.extra_columns:
+                for xc in args.extra_columns.split():
+                    for column_suffix in maf_type_printable:
+                        this_column_name = '%s_%s' % (xc, maf_type_printable[column_suffix])
+                        output_maf_map[this_column_name] = '%s_%s' % (xc, column_suffix)
+
+            # Add column mappings for extra columns seen in only one file
             for column_suffix in maf_type_printable:
-                this_column_name = '%s_%s' % (xc, maf_type_printable[column_suffix])
-                output_maf_map[this_column_name] = '%s_%s' % (xc, column_suffix)
+                this_suffix_columns = getattr(args, '%s_extra_columns' % column_suffix, None)
+                if this_suffix_columns:
+                    for column in this_suffix_columns.split():
+                        this_column_name = '%s_%s' % (column, maf_type_printable[column_suffix])
+                        output_maf_map[this_column_name] = '%s_%s' % (column, column_suffix)
 
-    # Add column mappings for extra columns seen in only one file
-    for column_suffix in maf_type_printable:
-        this_suffix_columns = getattr(args, '%s_extra_columns' % column_suffix, None)
-        if this_suffix_columns:
-            for column in this_suffix_columns.split():
-                this_column_name = '%s_%s' % (column, maf_type_printable[column_suffix])
-                output_maf_map[this_column_name] = '%s_%s' % (column, column_suffix)
+            # output_rows will associate the output column names with arrays that will contain that column's values per-row:
+            output_rows = OrderedDict()
+            expected_rows = OrderedDict()
+            for output_column in ['scenario'] + output_maf_map.keys():
+                output_rows[output_column] = []
+                expected_rows[output_column] = []
 
-    # output_rows will associate the output column names with arrays that will contain that column's values per-row:
-    output_rows = OrderedDict()
-    expected_rows = OrderedDict()
-    for output_column in ['scenario'] + output_maf_map.keys():
-        output_rows[output_column] = []
-        expected_rows[output_column] = []
+            # Create read count arrays:
+            for maf_type in maf_types:
+                output_rows['%s_%s' % (ref_count_column_prefix, maf_type_printable[maf_type])] = []
+                output_rows['%s_%s' % (alt_count_column_prefix, maf_type_printable[maf_type])] = []
+                output_rows['%s_%s' % (vaf_column_prefix, maf_type_printable[maf_type])] = []
+                expected_rows['%s_%s' % (ref_count_column_prefix, maf_type_printable[maf_type])] = []
+                expected_rows['%s_%s' % (alt_count_column_prefix, maf_type_printable[maf_type])] = []
+                expected_rows['%s_%s' % (vaf_column_prefix, maf_type_printable[maf_type])] = []
 
-    # Create read count arrays:
-    for maf_type in maf_types:
-        output_rows['%s_%s' % (ref_count_column_prefix, maf_type_printable[maf_type])] = []
-        output_rows['%s_%s' % (alt_count_column_prefix, maf_type_printable[maf_type])] = []
-        output_rows['%s_%s' % (vaf_column_prefix, maf_type_printable[maf_type])] = []
-        expected_rows['%s_%s' % (ref_count_column_prefix, maf_type_printable[maf_type])] = []
-        expected_rows['%s_%s' % (alt_count_column_prefix, maf_type_printable[maf_type])] = []
-        expected_rows['%s_%s' % (vaf_column_prefix, maf_type_printable[maf_type])] = []
+            for i, row in input_merge.iterrows():
+                # We exclude DNPs, TNPs, etc.
+                if row['Variant_Type'] not in ['SNP', 'INS', 'DEL']:
+                    continue
 
-    for i, row in input_merge.iterrows():
-        # We exclude DNPs, TNPs, etc.
-        if row['Variant_Type'] not in ['SNP', 'INS', 'DEL']:
-            continue
+                # Quad is a dictionary mapping each maf type to the corresponding VAFs on this row.
+                counts = {}
+                for input_type in input_mafs.keys():
+                    ref_column = '%s_%s' % (ref_count_column, input_type)
+                    if ref_column not in row.index:
+                        raise Exception('Error: Reference read count column %s not found in %s sample.' %
+                                        (ref_count_column, input_type))
 
-        # Quad is a dictionary mapping each maf type to the corresponding VAFs on this row.
-        counts = {}
-        for input_type in input_mafs.keys():
-            ref_column = '%s_%s' % (ref_count_column, input_type)
-            if ref_column not in row.index:
-                raise Exception('Error: Reference read count column %s not found in %s sample.' %
-                                (ref_count_column, input_type))
+                    alt_column = '%s_%s' % (alt_count_column, input_type)
+                    if alt_column not in row.index:
+                        raise Exception('Error: Alternate read count column %s not found in %s sample.' %
+                                        (alt_count_column, input_type))
 
-            alt_column = '%s_%s' % (alt_count_column, input_type)
-            if alt_column not in row.index:
-                raise Exception('Error: Alternate read count column %s not found in %s sample.' %
-                                (alt_count_column, input_type))
+                    # Cast ref and alt counts to float; if unable to do so, set as nan.
+                    try:
+                        ref_count = float(row[ref_column]) if not pd.isnull(row[ref_column]) else 0
+                    except ValueError:
+                        ref_count = float('nan')
 
-            # Cast ref and alt counts to float; if unable to do so, set as nan.
-            try:
-                ref_count = float(row[ref_column]) if not pd.isnull(row[ref_column]) else 0
-            except ValueError:
-                ref_count = float('nan')
+                    try:
+                        alt_count = float(row[alt_column]) if not pd.isnull(row[alt_column]) else 0
+                    except ValueError:
+                        alt_count = float('nan')
 
-            try:
-                alt_count = float(row[alt_column]) if not pd.isnull(row[alt_column]) else 0
-            except ValueError:
-                alt_count = float('nan')
+                    if ref_count == 0 and alt_count == 0:
+                        vaf = 0
+                    elif ref_count == float('nan') or alt_count == float('nan'):
+                        vaf = float('nan')
+                    else:
+                        vaf = alt_count / (ref_count + alt_count)
 
-            if ref_count == 0 and alt_count == 0:
-                vaf = 0
-            elif ref_count == float('nan') or alt_count == float('nan'):
-                vaf = float('nan')
-            else:
-                vaf = alt_count / (ref_count + alt_count)
+                    counts[input_type] = {'ref_count': ref_count, 'alt_count': alt_count, 'vaf': vaf}
 
-            counts[input_type] = {'ref_count': ref_count, 'alt_count': alt_count, 'vaf': vaf}
+                # row_dest either points to the output_rows or expected_rows OrderedDicts
+                row_dest = None
+                scenario_name = None
+                try:
+                    # Construct VAF quad out of counts (pull vaf value out)
+                    vaf_quad = {}
+                    for input_type in input_mafs.keys():
+                        vaf_quad[input_type] = counts[input_type]['vaf']
 
-        # row_dest either points to the output_rows or expected_rows OrderedDicts
-        row_dest = None
-        scenario_name = None
-        try:
-            # Construct VAF quad out of counts (pull vaf value out)
-            vaf_quad = {}
-            for input_type in input_mafs.keys():
-                vaf_quad[input_type] = counts[input_type]['vaf']
+                    scenario = Scenario(vaf_quad, scenarios_config_file_path)
+                    row_dest = output_rows
+                    scenario_name = scenario.name
+                except Scenario.NoScenarioException as e:
+                    if not args.total_output:
+                        continue
+                    else:
+                        row_dest = expected_rows
 
-            scenario = Scenario(vaf_quad, scenarios_config_file_path)
-            row_dest = output_rows
-            scenario_name = scenario.name
-        except Scenario.NoScenarioException as e:
-            if not args.total_output:
-                continue
-            else:
-                row_dest = expected_rows
+                row_dest['scenario'].append(scenario_name)
+                for output_column in output_maf_map:
+                    input_column = output_maf_map[output_column]
+                    row_dest[output_column].append(row[input_column])
 
-        row_dest['scenario'].append(scenario_name)
-        for output_column in output_maf_map:
-            input_column = output_maf_map[output_column]
-            row_dest[output_column].append(row[input_column])
+                for maf_type in maf_types:
+                    ref_output_column = '%s_%s' % (ref_count_column_prefix, maf_type_printable[maf_type])
+                    alt_output_column = '%s_%s' % (alt_count_column_prefix, maf_type_printable[maf_type])
+                    vaf_output_column = '%s_%s' % (vaf_column_prefix, maf_type_printable[maf_type])
+                    row_dest[ref_output_column].append(counts[maf_type]['ref_count'])
+                    row_dest[alt_output_column].append(counts[maf_type]['alt_count'])
+                    row_dest[vaf_output_column].append(counts[maf_type]['vaf'])
 
-        for maf_type in maf_types:
-            ref_output_column = '%s_%s' % (ref_count_column_prefix, maf_type_printable[maf_type])
-            alt_output_column = '%s_%s' % (alt_count_column_prefix, maf_type_printable[maf_type])
-            vaf_output_column = '%s_%s' % (vaf_column_prefix, maf_type_printable[maf_type])
-            row_dest[ref_output_column].append(counts[maf_type]['ref_count'])
-            row_dest[alt_output_column].append(counts[maf_type]['alt_count'])
-            row_dest[vaf_output_column].append(counts[maf_type]['vaf'])
+            # Write output.
+            output_df = pd.DataFrame.from_dict(output_rows)
 
-    # Write output.
-    output_df = pd.DataFrame.from_dict(output_rows)
+            # Prepend sample_id to each row if present
+            sample_id = getattr(args, 'sample_id', None)
+            if sample_id:
+                output_df.insert(0, sample_id_header, sample_id)
 
-    # Prepend sample_id to each row if present
-    sample_id = getattr(args, 'sample_id', None)
-    if sample_id:
-        output_df.insert(0, sample_id_header, sample_id)
+            output_df.to_csv(args.output, index=False, header=True, sep='\t')
+            logging.info('Wrote %s discovered scenarios to %s.' % (len(output_df.index), args.output.name))
 
-    output_df.to_csv(args.output, index=False, header=True, sep='\t')
-    logging.info('Wrote %s discovered scenarios to %s.' % (len(output_df.index), args.output.name))
+            if args.total_output:
+                expected_df = pd.DataFrame.from_dict(expected_rows)
+                if sample_id:
+                    expected_df.insert(0, sample_id_header, sample_id)
 
-    if args.total_output:
-        expected_df = pd.DataFrame.from_dict(expected_rows)
-        if sample_id:
-            expected_df.insert(0, sample_id_header, sample_id)
-
-        total_df = pd.concat([output_df, expected_df], axis=0)
-        total_df.to_csv(args.total_output, index=False, header=True, sep='\t')
-        logging.info('Wrote %s total variants to %s.' % (len(total_df.index), args.total_output.name))
+                total_df = pd.concat([output_df, expected_df], axis=0)
+                total_df.to_csv(args.total_output, index=False, header=True, sep='\t')
+                logging.info('Wrote %s total variants to %s.' % (len(total_df.index), args.total_output.name))
 
 
 def get_analysis_type(dna_normal=None, dna_tumor=None, rna_normal=None, rna_tumor=None):
@@ -386,3 +384,4 @@ if __name__ == "__main__":
                     rna_normal_extra_columns=args.rnxc,
                     rna_tumor_extra_columns=args.rtxc,
                     sample_id=args.id)
+        r2d2.load_data()
