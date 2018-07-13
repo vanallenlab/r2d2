@@ -4,7 +4,7 @@ import os
 import re
 from collections import defaultdict
 from scenarios import Condition, Scenario
-from r2d2 import get_analysis_type, AnalysisTypes, R2D2
+from r2d2 import get_analysis_type, AnalysisTypes, R2D2, R2D2ParsingException
 
 
 class TestR2D2(unittest.TestCase):
@@ -13,7 +13,8 @@ class TestR2D2(unittest.TestCase):
         dt = 'b'
         rn = 'c'
         rt = 'd'
-        r2d2 = R2D2(analysis_type=AnalysisTypes.all_inputs, dna_normal=dn, dna_tumor=dt, rna_normal=rn, rna_tumor=rt)
+        r2d2 = R2D2(analysis_type=AnalysisTypes.all_inputs, dna_normal=dn, dna_tumor=dt, rna_normal=rn, rna_tumor=rt,
+                    load_data = False)
         self.assertEqual(r2d2.maf_sample_paths, {
             'dna_normal': 'a',
             'dna_tumor': 'b',
@@ -24,7 +25,8 @@ class TestR2D2(unittest.TestCase):
         dn = 'a'
         dt = 'b'
         rt = 'd'
-        r2d2 = R2D2(analysis_type=AnalysisTypes.no_rna_normal, dna_normal=dn, dna_tumor=dt, rna_tumor=rt)
+        r2d2 = R2D2(analysis_type=AnalysisTypes.no_rna_normal, dna_normal=dn, dna_tumor=dt, rna_tumor=rt,
+                    load_data=False)
         self.assertEqual(r2d2.maf_sample_paths, {
             'dna_normal': 'a',
             'dna_tumor': 'b',
@@ -33,7 +35,7 @@ class TestR2D2(unittest.TestCase):
 
         dn = 'a'
         rn = 'c'
-        r2d2 = R2D2(analysis_type=AnalysisTypes.normal_only, dna_normal=dn, rna_normal=rn)
+        r2d2 = R2D2(analysis_type=AnalysisTypes.normal_only, dna_normal=dn, rna_normal=rn, load_data=False)
         self.assertEqual(r2d2.maf_sample_paths, {
             'dna_normal': 'a',
             'rna_normal': 'c'
@@ -41,7 +43,7 @@ class TestR2D2(unittest.TestCase):
 
         dn = 'a'
         dt = 'b'
-        r2d2 = R2D2(analysis_type=AnalysisTypes.dna_only, dna_normal=dn, dna_tumor=dt)
+        r2d2 = R2D2(analysis_type=AnalysisTypes.dna_only, dna_normal=dn, dna_tumor=dt, load_data=False)
         self.assertEqual(r2d2.maf_sample_paths, {
             'dna_normal': 'a',
             'dna_tumor': 'b'
@@ -49,7 +51,7 @@ class TestR2D2(unittest.TestCase):
 
         dt = 'b'
         rt = 'd'
-        r2d2 = R2D2(analysis_type=AnalysisTypes.tumor_only, dna_tumor=dt, rna_tumor=rt)
+        r2d2 = R2D2(analysis_type=AnalysisTypes.tumor_only, dna_tumor=dt, rna_tumor=rt, load_data=False)
         self.assertEqual(r2d2.maf_sample_paths, {
             'dna_tumor': 'b',
             'rna_tumor': 'd'
@@ -74,7 +76,21 @@ class TestR2D2(unittest.TestCase):
         self.assertEqual(len(dn_cols), len(dt_cols))
         self.assertEqual(len(dn_cols), len(rn_cols))
         self.assertEqual(len(dn_cols), len(rt_cols))
-        pass
+
+    def test_r2d2_load_data_merge_column_missing(self):
+        dn = '../test_input/scenarios/loh-del_dna-normal-missing-merge-column/dna_normal.maf'
+        dt = '../test_input/scenarios/loh-del_dna-normal-missing-merge-column/dna_tumor.maf'
+        rn = '../test_input/scenarios/loh-del_dna-normal-missing-merge-column/rna_normal.maf'
+        rt = '../test_input/scenarios/loh-del_dna-normal-missing-merge-column/rna_tumor.maf'
+        r2d2 = R2D2(analysis_type=AnalysisTypes.all_inputs, dna_normal=dn, dna_tumor=dt, rna_normal=rn, rna_tumor=rt,
+                    load_data=False)
+        self.assertRaises(R2D2ParsingException, r2d2.load_data)
+
+    def test_r2d2_analyze(self):
+        dn = '../test_data/dna-normal.maf'
+        dt = '../test_data/dna-tumor.maf'
+        r2d2 = R2D2(analysis_type=AnalysisTypes.dna_only, dna_normal=dn, dna_tumor=dt, rna_normal=None, rna_tumor=None)
+        r2d2.analyze()
 
     # Test that the correct analysis types are returned
     def test_get_analysis_type_4_files(self):
