@@ -5,7 +5,8 @@ import os
 import sys
 import logging
 from collections import OrderedDict
-from scenarios import Scenario
+from scenarios import ScenarioCalculator
+from maf_types import MafTypes, AnalysisTypes
 
 CONFIG_FILENAME = 'r2d2.ini'
 
@@ -13,28 +14,6 @@ CONFIG_FILENAME = 'r2d2.ini'
 class R2D2ParsingException(Exception):
     def __init__(self, error_args):
         Exception.__init__(self, error_args)
-
-
-class MafTypes(object):
-    dna_normal = 'dna_normal'
-    dna_tumor = 'dna_tumor'
-    rna_normal = 'rna_normal'
-    rna_tumor = 'rna_tumor'
-
-    @classmethod
-    def all(cls):
-        return [MafTypes.dna_normal,
-                MafTypes.dna_tumor,
-                MafTypes.rna_normal,
-                MafTypes.rna_tumor]
-
-
-class AnalysisTypes(object):
-    all_inputs = 'all_inputs'
-    no_rna_normal = 'no_rna_normal'
-    dna_only = 'dna_only'
-    normal_only = 'normal_only'
-    tumor_only = 'tumor_only'
 
 
 ANALYSIS_SAMPLES = {
@@ -228,6 +207,7 @@ class R2D2(object):
             expected_rows['{}_{}'.format(alt_count_column_prefix, MAF_TYPE_PRINTABLE[maf_type])] = []
             expected_rows['{}_{}'.format(vaf_column_prefix, MAF_TYPE_PRINTABLE[maf_type])] = []
 
+        scenario_calculator = ScenarioCalculator(self.scenarios_config_file_path)
         for i, row in self.input_merge.iterrows():
             # We exclude DNPs, TNPs, etc.
             if row['Variant_Type'] not in ['SNP', 'INS', 'DEL']:
@@ -261,10 +241,9 @@ class R2D2(object):
                 for input_type in self.maf_types_for_analysis:
                     vaf_quad[input_type] = counts[input_type]['vaf']
 
-                scenario = Scenario(analysis_type, vaf_quad, self.scenarios_config_file_path)
+                scenario_name = scenario_calculator.categorize(self.analysis_type, vaf_quad)
                 row_dest = output_rows
-                scenario_name = scenario.name
-            except Scenario.NoScenarioException as e:
+            except ScenarioCalculator.NoScenarioException as e:
                 if not args.total_output:
                     continue
                 else:

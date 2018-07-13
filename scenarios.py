@@ -1,4 +1,6 @@
 import ConfigParser
+from collections import defaultdict
+from maf_types import MafTypes
 
 SCENARIOS_CONFIG = 'scenarios.ini'
 
@@ -18,12 +20,13 @@ class Condition(object):
             elif len(tokens) == 3:
                 threshold = (float(tokens[1]), float(tokens[2]))
             else:
-                raise ValueError('Malformed conditions string - incorrect length (%s)' % condition_str)
+                raise ValueError('Malformed conditions string - incorrect length ({})'.format(condition_str))
 
             if tokens[0] not in Condition.conditions_types:
-                raise ValueError('Malformed conditions string - incorrect type (%s)' % condition_str)
+                raise ValueError('Malformed conditions string - incorrect type ({})'.format(condition_str))
 
-            self._clauses.append({'type': tokens[0], 'threshold': threshold})
+            self._clauses.append({'type': tokens[0],
+                                  'threshold': threshold})
 
     def test(self, value):
         value = float(value)
@@ -41,145 +44,66 @@ class Condition(object):
         return False
 
 
-class Scenario(object):
+class ScenarioCalculator(object):
     class NoScenarioException(Exception):
         pass
 
-    # Map of: {'scenario ini config name': [Conditions], ...}
-    condition_set = None
+    analysis_decision_tree = defaultdict(lambda: defaultdict(list))
 
-    @classmethod
-    def _get_all_subclasses(cls):
-        for subclass in cls.__subclasses__():
-            yield subclass
+    def __build_decision_tree(self, scenarios_config_filename):
+        """Config sections should be labeled <analysis_type>.<gl_vaf_status>.<priority>.<event>. Figure out what the
+        set of possible analysis types is based on the config sections present in the .ini file, and build the decision
+        tree for triaging requests evaluate VAF groupings."""
+        config = ConfigParser.ConfigParser()
+        config.read(scenarios_config_filename)
 
-            for subclass in subclass._get_all_subclasses():
-                yield subclass
+        for c in config.sections():
+            analysis_type, germline_vaf, priority, event = c.split('.')
+            priority = int(priority)
 
-    @classmethod
-    def _set_subclass_conditions(cls, config):
-        for subclass in Scenario._get_all_subclasses():
-            subclass.conditions = {}
-            if subclass.name in config.sections():
-                for item in config.items(subclass.name):
-                    subclass.conditions[item[0]] = Condition(item[1])
+            conditions = {}
 
-    _subclass_conditions_set = False
+            for maf_type in MafTypes.all():
+                try:
+                    condition_for_type = config.get(c, maf_type)
+                    conditions[maf_type] = Condition(condition_for_type)
+                except ConfigParser.NoOptionError:
+                    continue
 
-    def __new__(cls, quad, scenarios_config_filename):
-        if not Scenario._subclass_conditions_set:
-            config = ConfigParser.ConfigParser()
-            config.read(scenarios_config_filename)
-            Scenario._set_subclass_conditions(config)
+            self.analysis_decision_tree[analysis_type][germline_vaf].append({
+                'priority': priority,
+                'event': event,
+                'conditions': conditions
+            })
 
-            Scenario._subclass_conditions_set = True
+    def __init__(self, scenarios_config_filename):
+        self.__build_decision_tree(scenarios_config_filename)
 
-        for subclass in Scenario._get_all_subclasses():
-            remaining_types = subclass.conditions.keys()
-            for quad_type, quad_vaf in quad.iteritems():
-                if quad_type in remaining_types and subclass.conditions[quad_type].test(quad_vaf):
-                    remaining_types.remove(quad_type)
-                else:
-                    # Debug output:
-                    #if quad_type in remaining_types:
-                    #    print subclass.name, ':', quad_type, quad_vaf, 'failed', subclass.conditions[quad_type]._clauses
-                    break
+    def categorize(self, analysis_type, vaf_values):
+        categories_for_analysis_type = self.analysis_decision_tree.get(analysis_type, None)
+        if not categories_for_analysis_type:
+            raise self.NoScenarioException("No scenario found for analysis type {}".format(analysis_type))
 
-                if not remaining_types:
-                    return object.__new__(subclass)
+        categories_for_analysis_type_and_gl_status = []
+        if 'dna_normal' in vaf_values.keys():
+            germline_vaf = vaf_values['dna_normal']
+            if germline_vaf > 0:
+                categories_for_analysis_type_and_gl_status = categories_for_analysis_type['gl>0']
+            elif germline_vaf == 0:
+                categories_for_analysis_type_and_gl_status = categories_for_analysis_type['gl=0']
+        else:
+            categories_for_analysis_type_and_gl_status = categories_for_analysis_type['no_gl']
 
-        raise Scenario.NoScenarioException('No matching Scenario for quad %s' % quad)
-        
-class GermlineMosaicAllInputs(Scenario):
-    name = 'germline_mosaic_all_inputs'
+        for category in sorted(categories_for_analysis_type_and_gl_status, lambda x: x.get('priority')):
+            # For each category, by priority order, check whether the VAFs match for the event. Return the first event
+            # for which the VAFs fit the criteria.
+            category_fits = True
+            for maf_type, condition in category.get('conditions').items():
+                if maf_type in vaf_values:
+                    if not condition.test(vaf_values.get(maf_type)):
+                        category_fits = False
+            if category_fits:
+                return category.get('event')
 
-class GermlineMosaicNoRnaNormal(Scenario):
-	name = 'germline_mosaic_no_rna_normal'
-	
-class GermlineMosaicDnaOnly(Scenario):
-	name = 'germline_mosaic_DNA_only'
-	
-class TumorInNormalAllInputs(Scenario):
-	name = 'tumor_in_normal_all_inputs'
-	
-class TumorInNormalNoRnaNormal(Scenario):
-	name = 'tumor_in_normal_no_rna_normal'
-
-class TumorInNormalDnaOnly(Scenario):
-	name = 'tumor_in_normal_DNA_only'
-
-class RNAedAllInputs(Scenario):
-    name = 'rnaed_all_inputs'
-
-class RNAedNoRNANormal(Scenario):
-    name = 'rnaed_no_rna_normal'
-
-class TRNAedAllInputs(Scenario):
-    name = 't_rnaed_all_inputs'
-
-class VSEAllInputs(Scenario):
-    name = 'vse_all_inputs'
-
-class VSENoRNANOrmal(Scenario):
-    name = 'vse_no_rna_normal'
-    
-class VSENormalOnly(Scenario):
-    name = 'vse_normal_only'
-
-class TVSEAllInputs(Scenario):
-    name = 't_vse_all_inputs'
-	
-class VSETumorOnly(Scenario):
-	name = 'vse_tumor_only'
-
-class VSLAllInputs(Scenario):
-    name = 'vsl_all_inputs'
-
-class VSLNoRNANormal(Scenario):
-    name = 'vsl_no_rna_normal'
-    
-class VSLNormalOnly(Scenario):
-    name = 'vsl_normal_only'
-
-class TVSLAllInputs(Scenario):
-    name = 't_vsl_all_inputs'
-	
-class VSLTumorOnly(Scenario):
-	name = 'vsl_tumor_only'
-
-class LOHAltAllInputs(Scenario):
-    name = 'loh_alt_all_inputs'
-
-class LOHAltNoRNANormal(Scenario):
-    name = 'loh_alt_no_rna_normal'
-    
-class LOHAltDNAOnly(Scenario):
-    name = 'loh_alt_dna_only'
-    
-class LOHRefAllInputs(Scenario):
-    name = 'loh_ref_all_inputs'
-    
-class LOHRefNoRNANormal(Scenario):
-    name = 'loh_ref_no_rna_normal'
-    
-class LOHRefDNAOnly(Scenario):
-    name = 'loh_ref_dna_only'
-
-class SomaticAllInputs(Scenario):
-    name = 'somatic_all_inputs'
-    
-class SomaticNoRNANormla(Scenario):
-    name = 'somatic_no_rna_normal'
-
-class SomaticDNAOnly(Scenario):
-    name = 'somatic_dna_only'
-
-class GermlineAllInputs(Scenario):
-    name = 'germline_all_inputs'
-
-class GermlineNoRnaNormal(Scenario):
-    name = 'germline_no_rna_normal'
-
-class GermlineNormalOnly(Scenario):
-    name = 'germline_normal_only'
-
+        raise self.NoScenarioException("No scenario found for analysis type {} and vaf values {}".format(analysis_type,
+                                                                                                         vaf_values))

@@ -3,8 +3,9 @@ import numpy as np
 import os
 import re
 from collections import defaultdict
-from scenarios import Condition, Scenario
-from r2d2 import get_analysis_type, AnalysisTypes, R2D2, R2D2ParsingException
+from scenarios import Condition, ScenarioCalculator
+from r2d2 import get_analysis_type, R2D2, R2D2ParsingException
+from maf_types import AnalysisTypes
 
 
 class TestR2D2(unittest.TestCase):
