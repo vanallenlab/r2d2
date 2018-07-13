@@ -80,11 +80,12 @@ class ScenarioCalculator(object):
         self.__build_decision_tree(scenarios_config_filename)
 
     def categorize(self, analysis_type, vaf_values):
+        # Navigate decision tree first by analysis type
         categories_for_analysis_type = self.analysis_decision_tree.get(analysis_type, None)
         if not categories_for_analysis_type:
             raise self.NoScenarioException("No scenario found for analysis type {}".format(analysis_type))
 
-        categories_for_analysis_type_and_gl_status = []
+        # Further navigate tree by germline VAF status
         if 'dna_normal' in vaf_values.keys():
             germline_vaf = vaf_values['dna_normal']
             if germline_vaf > 0:
@@ -94,14 +95,16 @@ class ScenarioCalculator(object):
         else:
             categories_for_analysis_type_and_gl_status = categories_for_analysis_type['no_gl']
 
+        # For each category, by priority order, check whether the VAFs match for the event. Return the first event
+        # for which the VAFs fit the criteria.
         for category in sorted(categories_for_analysis_type_and_gl_status, lambda x: x.get('priority')):
-            # For each category, by priority order, check whether the VAFs match for the event. Return the first event
-            # for which the VAFs fit the criteria.
             category_fits = True
             for maf_type, condition in category.get('conditions').items():
                 if maf_type in vaf_values:
+                    # If any condition fails for this category, we will not select this category
                     if not condition.test(vaf_values.get(maf_type)):
                         category_fits = False
+            # If all conditions have passed for this category, we will select this category
             if category_fits:
                 return category.get('event')
 
