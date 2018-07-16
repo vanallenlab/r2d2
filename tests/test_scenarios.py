@@ -6,7 +6,7 @@ from collections import defaultdict
 from scenarios import Condition, ScenarioCalculator, Event
 from r2d2 import get_analysis_type, AnalysisTypes
 
-SCENARIOS_INI = './test_scenarios.ini'
+SCENARIOS_INI = './test_scenarios.ini.txt'
 
 
 class TestScenarioCalculator(unittest.TestCase):
