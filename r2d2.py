@@ -266,17 +266,16 @@ class R2D2(object):
         output_df = pd.DataFrame.from_dict(output_rows)
 
         # Prepend sample_id to each row if present
-        sample_id = getattr(args, 'sample_id', None)
-        if sample_id:
-            output_df.insert(0, self.sample_id_header, sample_id)
+        if self.sample_id:
+            output_df.insert(0, self.sample_id_header, self.sample_id)
 
-        output_df.to_csv(args.output, index=False, header=True, sep='\t')
-        logging.info('Wrote {} discovered scenarios to {}.'.format(len(output_df.index), args.output.name))
+        output_df.to_csv(self.output, index=False, header=True, sep='\t')
+        logging.info('Wrote {} discovered scenarios to {}.'.format(len(output_df.index), self.output.name))
 
         if args.total_output:
             expected_df = pd.DataFrame.from_dict(expected_rows)
-            if sample_id:
-                expected_df.insert(0, self.sample_id_header, sample_id)
+            if self.sample_id:
+                expected_df.insert(0, self.sample_id_header, self.sample_id)
 
             total_df = pd.concat([output_df, expected_df], axis=0)
             total_df.to_csv(args.total_output, index=False, header=True, sep='\t')

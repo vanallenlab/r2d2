@@ -3,11 +3,21 @@ import numpy as np
 import os
 import re
 from collections import defaultdict
-from scenarios import Condition, Scenario
+from scenarios import Condition
 from r2d2 import get_analysis_type, AnalysisTypes
 
 
 class TestCondition(unittest.TestCase):
+    def test_incorrect_thresholds_throw_error(self):
+        def setup_condition():
+            Condition('= 2.5 3.8')
+        self.assertRaises(ValueError, setup_condition)
+
+    def test_incorrect_equality_formatting_throws_error(self):
+        def setup_condition():
+            Condition('= .8')
+        self.assertRaises(ValueError, setup_condition)
+
     def test_condition_less_than(self):
         condition = Condition('< 0.3')
 
@@ -95,4 +105,11 @@ class TestCondition(unittest.TestCase):
         # Should return true for inputs equal to 0
         self.assertEqual(condition.test(0), True)
         self.assertEqual(condition.test(0.0), True)
+
+    def test_condition_equal_to_5(self):
+        condition = Condition('= 0.50 0.50')
+
+        # Should return true for inputs equal to 0
+        self.assertEqual(condition.test(.5), True)
+        self.assertEqual(condition.test(0.50), True)
 
