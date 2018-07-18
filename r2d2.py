@@ -353,8 +353,7 @@ if __name__ == "__main__":
                     dna_tumor=args.dt,
                     rna_normal=args.rn,
                     rna_tumor=args.rt,
-                    output=args.o,
-                    total_output=args.to,
+                    output_location=args.o,
                     config_path=args.cp,
                     dna_normal_ref_count=args.dnrc,
                     dna_normal_alt_count=args.dnac,
@@ -370,4 +369,5 @@ if __name__ == "__main__":
                     rna_normal_extra_columns=args.rnxc,
                     rna_tumor_extra_columns=args.rtxc,
                     sample_id=args.id)
-        r2d2.analyze()
+        output_df = r2d2.analyze()
+        r2d2.output_results(output_df)
