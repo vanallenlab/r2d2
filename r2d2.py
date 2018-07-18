@@ -36,7 +36,7 @@ OUTPUT_MAF_MAP = OrderedDict([
 
 class R2D2(object):
     def __init__(self, analysis_type=None,
-                 dna_normal=None, dna_tumor=None, rna_normal=None, rna_tumor=None, output=None, total_output=None,
+                 dna_normal=None, dna_tumor=None, rna_normal=None, rna_tumor=None, output_location=None,
                  config_path=None,
                  dna_normal_ref_count='',
                  dna_normal_alt_count='',
@@ -59,8 +59,7 @@ class R2D2(object):
         self.dna_tumor = dna_tumor
         self.rna_normal = rna_normal
         self.rna_tumor = rna_tumor
-        self.output = output
-        self.total_output = total_output
+        self.output_location = output_location
         self.sample_id = sample_id
         self.extra_columns = extra_columns
 
@@ -228,19 +227,16 @@ class R2D2(object):
             # row_dest either points to the output_rows or expected_rows OrderedDicts
             row_dest = None
             scenario_name = None
+            # Construct VAF quad out of counts (pull vaf value out)
+            vaf_quad = {}
+            for input_type in self.maf_types_for_analysis:
+                vaf_quad[input_type] = counts[input_type]['vaf']
             try:
-                # Construct VAF quad out of counts (pull vaf value out)
-                vaf_quad = {}
-                for input_type in self.maf_types_for_analysis:
-                    vaf_quad[input_type] = counts[input_type]['vaf']
-
                 scenario_name = scenario_calculator.categorize(self.analysis_type, vaf_quad)
                 row_dest = output_rows
             except ScenarioCalculator.NoScenarioException as e:
-                if not args.total_output:
-                    continue
-                else:
-                    row_dest = expected_rows
+                logging.error("Could not find scenario for VAF values {} and analysis type {}".format(vaf_quad,
+                                                                                                      analysis_type))
 
             row_dest['scenario'].append(scenario_name)
             for output_column in OUTPUT_MAF_MAP:
@@ -262,17 +258,11 @@ class R2D2(object):
         if self.sample_id:
             output_df.insert(0, self.sample_id_header, self.sample_id)
 
+        return output_df
+
+    def output_results(self, output_df):
         output_df.to_csv(self.output, index=False, header=True, sep='\t')
         logging.info('Wrote {} discovered scenarios to {}.'.format(len(output_df.index), self.output.name))
-
-        if args.total_output:
-            expected_df = pd.DataFrame.from_dict(expected_rows)
-            if self.sample_id:
-                expected_df.insert(0, self.sample_id_header, self.sample_id)
-
-            total_df = pd.concat([output_df, expected_df], axis=0)
-            total_df.to_csv(args.total_output, index=False, header=True, sep='\t')
-            logging.info('Wrote {} total variants to {}.'.format(len(total_df.index), args.total_output.name))
 
 
 def get_analysis_type(dna_normal=None, dna_tumor=None, rna_normal=None, rna_tumor=None):

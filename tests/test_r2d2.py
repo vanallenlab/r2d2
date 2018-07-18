@@ -6,6 +6,7 @@ from collections import defaultdict
 from scenarios import Condition, ScenarioCalculator
 from r2d2 import get_analysis_type, R2D2, R2D2ParsingException
 from maf_types import AnalysisTypes
+from scenarios import Event
 
 
 class TestR2D2(unittest.TestCase):
@@ -92,8 +93,10 @@ class TestR2D2(unittest.TestCase):
         dt = '../test_data/all_inputs/germline_mosaic/small-dna-tumor.maf'
         rn = '../test_data/all_inputs/germline_mosaic/small-rna-normal.maf'
         rt = '../test_data/all_inputs/germline_mosaic/small-rna-tumor.maf'
-        r2d2 = R2D2(analysis_type=AnalysisTypes.all_inputs, dna_normal=dn, dna_tumor=dt, rna_normal=rn, rna_tumor=rt)
-        r2d2.analyze()
+        r2d2 = R2D2(analysis_type=AnalysisTypes.all_inputs, dna_normal=dn, dna_tumor=dt, rna_normal=rn, rna_tumor=rt,
+                    sample_id='test_sample')
+        output_df = r2d2.analyze()
+        self.assertEqual(output_df.iloc[0].scenario, Event.germline_mosaic)
 
     # Test that the correct analysis types are returned
     def test_get_analysis_type_4_files(self):
