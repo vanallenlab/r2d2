@@ -1,0 +1,2 @@
+Hugo_Symbol	Entrez_Gene_Id	Center	NCBI_Build	Chromosome	Start_position	End_position	Strand	Variant_Classification	Variant_Type	Reference_Allele	Tumor_Seq_Allele1	Tumor_Seq_Allele2	t_alt_count	t_ref_count	t_ref_qscores	t_alt_qscores	n_ref_qscores	n_alt_qscores	t_alt_mqscores	t_ref_mqscores
+OR4F5	79501	broad.mit.edu	37	1	69511	69511	+	Missense_Mutation	SNP	A	A	G	15	85		26,24,22	NA	NA	29,36,40

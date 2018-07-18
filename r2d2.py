@@ -156,7 +156,7 @@ class R2D2(object):
             return float(alt_count) / float(ref_count + alt_count)
 
     def analyze(self):
-        logging.info('Analyzing {} total variants...'.format(self.input_merge.index))
+        logging.info('Analyzing {} total variants...'.format(len(self.input_merge)))
         for maf_type in self.maf_types_for_analysis:
             allele1_k = 'Allele1_{}'.format(MAF_TYPE_PRINTABLE[maf_type])
             allele1_v = 'Tumor_Seq_Allele1_{}'.format(maf_type)

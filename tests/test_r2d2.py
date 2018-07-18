@@ -87,10 +87,12 @@ class TestR2D2(unittest.TestCase):
                     load_data=False)
         self.assertRaises(R2D2ParsingException, r2d2.load_data)
 
-    def test_r2d2_analyze(self):
-        dn = '../test_data/dna-normal.maf'
-        dt = '../test_data/dna-tumor.maf'
-        r2d2 = R2D2(analysis_type=AnalysisTypes.dna_only, dna_normal=dn, dna_tumor=dt, rna_normal=None, rna_tumor=None)
+    def test_r2d2_analyze_all_inputs_germline_mosaic(self):
+        dn = '../test_data/all_inputs/germline_mosaic/small-dna-normal.maf'
+        dt = '../test_data/all_inputs/germline_mosaic/small-dna-tumor.maf'
+        rn = '../test_data/all_inputs/germline_mosaic/small-rna-normal.maf'
+        rt = '../test_data/all_inputs/germline_mosaic/small-rna-tumor.maf'
+        r2d2 = R2D2(analysis_type=AnalysisTypes.all_inputs, dna_normal=dn, dna_tumor=dt, rna_normal=rn, rna_tumor=rt)
         r2d2.analyze()
 
     # Test that the correct analysis types are returned
