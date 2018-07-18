@@ -19,7 +19,7 @@ dna_tumor:  > 0.6
 rna_normal:  < 0.3
 rna_tumor:  > 0.6
 
-[all_inputs.gl>0.3.vse_all_inputs]
+[all_inputs.gl>0.3.vse]
 dna_normal: = 0.30 0.60
 dna_tumor: = 0.30 0.60
 rna_normal: >= 0.90
@@ -139,7 +139,7 @@ rna_tumor: = 0 1
 
 [no_rna_normal.gl=0.3.unclassified]
 dna_normal: = 0.0 0.0
-dna_tumor: = 0 1
+dna_tumor: = 0.0 0.0
 rna_tumor: = 0 1
 
 # Two samples are present (germline and tumor DNA), germline VAF > 0

@@ -6,7 +6,7 @@ import sys
 import logging
 from collections import OrderedDict
 from scenarios import ScenarioCalculator
-from maf_types import MafTypes, AnalysisTypes
+from maf_types import AnalysisTypes, ANALYSIS_SAMPLES
 
 CONFIG_FILENAME = 'r2d2.ini'
 
@@ -15,14 +15,6 @@ class R2D2ParsingException(Exception):
     def __init__(self, error_args):
         Exception.__init__(self, error_args)
 
-
-ANALYSIS_SAMPLES = {
-    AnalysisTypes.all_inputs: [MafTypes.dna_normal, MafTypes.dna_tumor, MafTypes.rna_normal, MafTypes.rna_tumor],
-    AnalysisTypes.no_rna_normal: [MafTypes.dna_normal, MafTypes.dna_tumor, MafTypes.rna_tumor],
-    AnalysisTypes.dna_only: [MafTypes.dna_normal, MafTypes.dna_tumor],
-    AnalysisTypes.normal_only: [MafTypes.dna_normal, MafTypes.rna_normal],
-    AnalysisTypes.tumor_only: [MafTypes.dna_tumor, MafTypes.rna_tumor]
-}
 
 MAF_TYPE_PRINTABLE = {
     'dna_normal': 'DNA_Normal', 'dna_tumor': 'DNA_Tumor',
@@ -40,6 +32,7 @@ OUTPUT_MAF_MAP = OrderedDict([
     ('Variant_Type', 'Variant_Type'),
     ('Reference_Allele', 'Reference_Allele_dna_normal'),
 ])
+
 
 class R2D2(object):
     def __init__(self, analysis_type=None,

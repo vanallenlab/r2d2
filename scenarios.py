@@ -1,6 +1,6 @@
 import ConfigParser
 from collections import defaultdict
-from maf_types import MafTypes
+from maf_types import MafTypes, ANALYSIS_SAMPLES
 
 SCENARIOS_CONFIG = 'scenarios.ini'
 
@@ -8,7 +8,6 @@ SCENARIOS_CONFIG = 'scenarios.ini'
 class Event(object):
     germline_mosaic = 'germline_mosaic'
     tumor_in_normal = 'tumor_in_normal'
-    vse_all_inputs = 'vse_all_inputs'
     t_vse = 't_vse'
     vse = 'vse'
     vsl = 'vsl'
@@ -25,7 +24,6 @@ class Event(object):
     def all(cls):
         return [Event.germline_mosaic,
                 Event.tumor_in_normal,
-                Event.vse_all_inputs,
                 Event.vse,
                 Event.t_vse,
                 Event.vsl,
@@ -95,6 +93,9 @@ class ScenarioCalculator(object):
     class UnrecognizedEventException(Exception):
         pass
 
+    class WrongVAFValuesException(Exception):
+        pass
+
     analysis_decision_tree = defaultdict(lambda: defaultdict(list))
 
     def __build_decision_tree(self, scenarios_config_filename):
@@ -128,6 +129,13 @@ class ScenarioCalculator(object):
     def __init__(self, scenarios_config_filename):
         self.__build_decision_tree(scenarios_config_filename)
 
+    def __validate_vaf_values_structure(self, analysis_type, vaf_values):
+        """Validate that given the analysis type requested, the proper vaf values have been provided"""
+        required_keys = ANALYSIS_SAMPLES.get(analysis_type, [])
+        if set(vaf_values.keys()) != set(required_keys):
+            raise self.WrongVAFValuesException("Analysis specified was {}, but VAF values provided were {}"
+                                               .format(analysis_type, vaf_values))
+
     def __get_possible_categories(self, analysis_type, vaf_values):
         # Navigate decision tree first by analysis type
         categories_for_analysis_type = self.analysis_decision_tree.get(analysis_type, None)
@@ -145,6 +153,7 @@ class ScenarioCalculator(object):
             return categories_for_analysis_type['no_gl']
 
     def categorize(self, analysis_type, vaf_values):
+        self.__validate_vaf_values_structure(analysis_type, vaf_values)
         possible_categories = self.__get_possible_categories(analysis_type, vaf_values)
         # For each category, by priority order, check whether the VAFs match for the event. Return the first event
         # for which the VAFs fit the criteria.
