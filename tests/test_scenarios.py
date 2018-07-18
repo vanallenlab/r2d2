@@ -1,10 +1,6 @@
 import unittest
-import numpy as np
-import os
-import re
-from collections import defaultdict
-from scenarios import Condition, ScenarioCalculator, Event
-from r2d2 import get_analysis_type, AnalysisTypes
+from scenarios import ScenarioCalculator, Event
+from r2d2 import AnalysisTypes
 
 SCENARIOS_INI = './test_scenarios.ini.txt'
 
@@ -13,9 +9,27 @@ class TestScenarioCalculator(unittest.TestCase):
     def setUp(self):
         self.sc = ScenarioCalculator(SCENARIOS_INI)
 
-    # Test uncategorizeable scenarios
+    # Test not-categorizable scenarios
     def test_raises_no_scenario_exception(self):
         self.assertRaises(self.sc.NoScenarioException, self.sc.categorize, 'bad scenario', {})
+
+    # Test that using incorrect VAF structure throws error
+    def test_wrong_vaf_exception_1(self):
+        self.assertRaises(self.sc.WrongVAFValuesException, self.sc.categorize, AnalysisTypes.tumor_only,
+                          {'dna_normal': 0.25,
+                           'dna_tumor': 0.20,
+                           'rna_normal': 0.25,
+                           'rna_tumor': 0.15})
+
+    def test_wrong_vaf_exception_2(self):
+        self.assertRaises(self.sc.WrongVAFValuesException, self.sc.categorize, AnalysisTypes.all_inputs,
+                          {'dna_normal': 0.25,
+                           'rna_tumor': 0.15})
+
+    def test_wrong_vaf_exception_3(self):
+        self.assertRaises(self.sc.WrongVAFValuesException, self.sc.categorize, AnalysisTypes.no_rna_normal,
+                          {'dna_normal': 0.25,
+                           'rna_tumor': 0.15})
 
     # Test all_inputs scenarios
     def test_all_inputs_germline_mosaic(self):
