@@ -1,5 +1,6 @@
 import unittest
-from scenarios import ScenarioCalculator, Event
+
+from helpers.scenarios import ScenarioCalculator, Event
 from r2d2 import AnalysisTypes
 
 SCENARIOS_INI = './test_scenarios.ini.txt'

@@ -2,8 +2,6 @@ import ConfigParser
 from collections import defaultdict
 from maf_types import MafTypes, ANALYSIS_SAMPLES
 
-SCENARIOS_CONFIG = 'scenarios.ini'
-
 
 class Event(object):
     germline_mosaic = 'germline_mosaic'

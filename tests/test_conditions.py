@@ -1,5 +1,6 @@
 import unittest
-from scenarios import Condition
+
+from helpers.scenarios import Condition
 
 
 class TestCondition(unittest.TestCase):

@@ -1,12 +1,14 @@
-import argparse
-import pandas as pd
 import ConfigParser
+import argparse
+import logging
 import os
 import sys
-import logging
 from collections import OrderedDict
-from scenarios import ScenarioCalculator
-from maf_types import AnalysisTypes, ANALYSIS_SAMPLES
+
+import pandas as pd
+
+from helpers.maf_types import AnalysisTypes, ANALYSIS_SAMPLES
+from helpers.scenarios import ScenarioCalculator
 
 CONFIG_FILENAME = 'r2d2.ini'
 

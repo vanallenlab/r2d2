@@ -1,12 +1,8 @@
 import unittest
-import numpy as np
-import os
-import re
-from collections import defaultdict
-from scenarios import Condition, ScenarioCalculator
+
+from helpers.maf_types import AnalysisTypes
+from helpers.scenarios import Event
 from r2d2 import get_analysis_type, R2D2, R2D2ParsingException
-from maf_types import AnalysisTypes
-from scenarios import Event
 
 
 class TestR2D2(unittest.TestCase):
@@ -97,7 +93,8 @@ class TestR2D2(unittest.TestCase):
                     sample_id='test_sample')
         output_df = r2d2.analyze()
         self.assertEqual(output_df.iloc[0].scenario, Event.germline_mosaic)
-
+        self.assertEqual(output_df.iloc[0].sample_id, 'test_sample')
+        
     # Test that the correct analysis types are returned
     def test_get_analysis_type_4_files(self):
         dn = 'a'
